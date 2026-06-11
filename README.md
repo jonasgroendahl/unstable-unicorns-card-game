@@ -1,0 +1,91 @@
+# 🦄 Unstable Unicorns
+
+A complete, playable digital build of the card game **Unstable Unicorns** (base
+1st‑generation / Kickstarter deck) — realtime multiplayer for **2–8 players**,
+with a Hearthstone‑inspired board, animations, and procedural sound.
+
+Build a Unicorn Army, betray your friends. Unicorns are your friends now.
+
+## Quick start
+
+```bash
+pnpm install
+pnpm dev          # http://localhost:3000
+```
+
+- **Quick Play** (`/debug`) — start a full game instantly with hotseat humans
+  - AI bots, no lobby needed. One screen, switchable viewpoint. Best for testing.
+- **Host game** — creates a lobby with a join code; add bots, then start.
+- **Join** — enter a friend's join code to take a seat.
+
+## What's implemented
+
+- **All 84 base‑deck cards** (127 copies) with exact 2nd‑edition rules text, art,
+  and fully implemented effects — Magical Unicorns, Magic, Upgrades, Downgrades,
+  Neigh / Super Neigh, and every aura/replacement/triggered interaction.
+- **The Neigh reaction window** — when any card is played, every eligible player
+  gets a ~5‑second window to Neigh it. Neighs chain (odd count cancels, even
+  resolves); Super Neigh ends the chain. Yay / Slowdown / Ginormous are honored.
+- **Continuous auras & edge cases** — Pandamonium (Pandas immune to _targeted_
+  unicorn effects), Blinding Light, Queen Bee, Rainbow Aura, Tiny Stable,
+  Barbed Wire, Black Knight & Phoenix replacement effects, Unicorn Lasso borrow/
+  return, Puppicorn relocation, Change of Luck extra turns, and more.
+- **Realtime multiplayer** — authoritative in‑memory engine on the server, SSE
+  push of per‑player sanitized state, commands via server functions. Bots play
+  themselves server‑side.
+
+## Architecture
+
+```
+Browser (React) ──command (server fn)──▶ GameEngine (in‑memory, authoritative)
+       ▲                                          │
+       └────── SSE per‑player sanitized state ◀───┘
+```
+
+- `src/game/` — the pure, framework‑free rules engine (unit‑tested).
+  - `engine/GameEngine.ts` — command queue, deferred‑based player choices,
+    chokepoints (`destroy`/`sacrifice`/`moveUnicornToStable`), reaction chain,
+    state‑based actions, turn flow.
+  - `derive.ts` — the effective‑identity selector layer (auras rewrite what a
+    card _is_; every chokepoint reads through here).
+  - `cards/` — `cardData.ts` (generated) + `effects/*` (per‑card behavior).
+  - `ai/bot.ts` — simple auto‑responder bots.
+- `src/server/` — `registry.ts` (lobbies + live engines) and `actions.ts`
+  (lobby + command server functions).
+- `src/routes/api/stream.$gameId.tsx` — the SSE stream.
+- `src/components/game/` — the board UI; `src/lib/gameClient.ts` abstracts local
+  (in‑process) vs. remote (SSE) play behind one interface.
+
+State is in‑memory, so the app needs a single long‑lived Node process (the dev
+server and a standard `node .output/server/index.mjs` deploy both qualify).
+
+## Card data
+
+Card text and art were scraped from the community wiki + unicornsdatabase and
+live in `data/cards_research.json`. Regenerate the typed table with:
+
+```bash
+pnpm gen-cards
+```
+
+Art is in `public/cards/<slug>.{jpg,png}`.
+
+## Audio
+
+Sound effects are synthesized at runtime via the Web Audio API (no asset files).
+Background music is optional: drop an MP3/OGG at `public/audio/music.mp3` and it
+will loop automatically; absent that, the game is silent music‑wise. Volume and
+mute persist to `localStorage`.
+
+## Scripts
+
+```bash
+pnpm dev        # dev server
+pnpm build      # production build (Nitro server output in .output/)
+pnpm test       # engine unit tests (vitest, deterministic via seeded RNG)
+pnpm gen-cards  # regenerate src/game/cards/cardData.ts from research JSON
+```
+
+## Tech
+
+TanStack Start + Router · Nitro · React 19 · Tailwind v4 · shadcn/ui · Vitest.

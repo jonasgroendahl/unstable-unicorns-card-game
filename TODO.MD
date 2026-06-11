@@ -1,0 +1,3 @@
+- Hover over to see card in a zoomed view
+- Add DB
+- Game log with a max height and scrollable, placed in a better spot

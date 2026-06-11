@@ -1,0 +1,20 @@
+{
+  "projectName": "unstable-unicorns-the-game",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "pnpm",
+  "includeExamples": false,
+  "tailwind": true,
+  "addOnOptions": {
+    "prisma": {
+      "database": "postgres"
+    }
+  },
+  "envVarValues": {},
+  "git": true,
+  "install": false,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": ["nitro", "prisma", "shadcn", "t3env"]
+}
