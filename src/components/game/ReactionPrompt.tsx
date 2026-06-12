@@ -37,10 +37,10 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
 
   return (
     <section
-      className="pointer-events-none fixed inset-x-0 top-1/2 z-30 flex -translate-y-1/2 justify-center px-3"
+      className="uu-reaction-layer pointer-events-none fixed inset-x-0 z-30 flex justify-center px-3"
       aria-label="Neigh response window"
     >
-      <div className="uu-glass uu-reaction-dock pointer-events-auto w-[min(94vw,760px)] rounded-2xl p-3 shadow-2xl">
+      <div className="uu-glass uu-reaction-dock pointer-events-auto w-[min(94vw,760px)] overflow-y-auto rounded-2xl p-3 shadow-2xl">
         <div className="flex items-start gap-3">
           {reaction.targetCard ? (
             <CardView card={reaction.targetCard} size="sm" />
@@ -57,7 +57,7 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
                 {reaction.targetCard?.name ?? "A card"} by {playerName(reaction.targetByPlayer)}
               </span>
             </div>
-            <p className="mt-1 flex items-center gap-1.5 text-[11px] text-white/55">
+            <p className="mt-1 hidden items-center gap-1.5 text-[11px] text-white/55 sm:flex">
               <Eye className="size-3" />
               The board stays active. Hover cards and inspect every stable before deciding.
             </p>
@@ -108,12 +108,17 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
         )}
 
         {reaction.canRespond ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-2">
-            <div>
-              <div className="text-xs font-bold text-amber-100">Your response</div>
-              <div className="text-[10px] text-white/45">Play a Neigh card or pass.</div>
+          <div className="uu-reaction-response rounded-xl bg-white/5 px-3 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="text-xs font-bold text-amber-100">Your response</div>
+                <div className="text-[10px] text-white/45">Play a Neigh card or pass.</div>
+              </div>
+              <Button variant="secondary" size="sm" onClick={onPass}>
+                <Ban data-icon="inline-start" /> Pass
+              </Button>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="uu-reaction-neighs mt-2 flex flex-wrap items-center justify-center gap-2">
               {reaction.playableNeighs.map((c) => (
                 <CardView
                   key={c.instanceId}
@@ -124,9 +129,6 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
                   title={`Play ${c.name}`}
                 />
               ))}
-              <Button variant="secondary" size="sm" onClick={onPass}>
-                <Ban data-icon="inline-start" /> Pass
-              </Button>
             </div>
           </div>
         ) : (

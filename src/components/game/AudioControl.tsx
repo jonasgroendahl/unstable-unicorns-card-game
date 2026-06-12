@@ -11,8 +11,28 @@ function useAudioPrefs() {
   );
 }
 
-export function AudioControl({ className }: { className?: string }) {
+export function AudioControl({ className, compact }: { className?: string; compact?: boolean }) {
   const prefs = useAudioPrefs();
+  if (compact) {
+    return (
+      <button
+        onClick={() => {
+          audio.unlock();
+          audio.setMuted(!prefs.muted);
+          if (!prefs.muted) audio.play("click");
+        }}
+        title={prefs.muted ? "Unmute" : "Mute"}
+        aria-label={prefs.muted ? "Unmute" : "Mute"}
+        className={cn(
+          "uu-glass grid size-10 place-items-center rounded-full text-white/80 hover:text-white",
+          className,
+        )}
+      >
+        {prefs.muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+      </button>
+    );
+  }
+
   return (
     <div className={cn("uu-glass flex items-center gap-2 rounded-full px-2.5 py-1.5", className)}>
       <button

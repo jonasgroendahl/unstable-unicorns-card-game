@@ -67,6 +67,12 @@ export function CardView({
       aria-label={previewOnly ? undefined : cardTitle}
       onClick={onClick}
       role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(event) => {
+        if (!onClick || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        onClick();
+      }}
     >
       <img src={card.image} alt={previewOnly ? "" : card.name} loading="lazy" draggable={false} />
       {autoDrawn && (

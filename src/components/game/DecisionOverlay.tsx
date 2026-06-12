@@ -56,7 +56,7 @@ export function DecisionOverlay({
       return (
         <Banner
           prompt={decision.prompt}
-          subtitle="Hover a highlighted Stable to preview the card, then click to attach it."
+          subtitle="Tap a highlighted Stable to attach it. On larger screens, hover to preview."
           centered
         >
           {decision.may && (
@@ -132,7 +132,7 @@ export function DecisionOverlay({
       prompt={decision.prompt}
       subtitle={multi ? `Select ${min === max ? min : `${min}–${max}`}.` : undefined}
     >
-      <div className="flex max-h-[40vh] flex-wrap justify-center gap-2 overflow-y-auto p-1">
+      <div className="uu-decision-cards flex max-h-[40vh] flex-wrap justify-center gap-2 overflow-y-auto p-1">
         {(decision.optionCards ?? []).map((c) => (
           <CardView
             key={c.instanceId}
@@ -177,14 +177,12 @@ function Banner({
 }) {
   return (
     <div
-      className={cn(
-        "pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4",
-        centered ? "top-1/2 -translate-y-1/2" : "bottom-[210px]",
-      )}
+      className="uu-decision-layer pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4"
+      data-centered={centered ? "true" : undefined}
     >
       <div
         className={cn(
-          "uu-glass uu-pop max-w-[92vw] rounded-2xl p-4 text-center shadow-2xl",
+          "uu-decision-panel uu-glass uu-pop max-w-[92vw] rounded-2xl p-4 text-center shadow-2xl",
           children ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
@@ -199,7 +197,7 @@ function Banner({
 /** Other players are waiting on someone's decision. */
 export function WaitingBanner({ name, prompt }: { name: string; prompt: string }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[210px] z-40 flex justify-center px-4">
+    <div className="uu-waiting-layer pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4">
       <div className="uu-glass rounded-xl px-4 py-2 text-center text-sm text-white/70">
         Waiting for <span className="font-semibold text-amber-200">{name}</span>: {prompt}
       </div>

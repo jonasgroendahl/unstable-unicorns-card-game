@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Layers, Sparkles, Trophy } from "lucide-react";
+import { Hand, Layers, Sparkles, Trophy, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button.tsx";
 import { CardBack, CardView } from "./CardView.tsx";
@@ -105,64 +105,154 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
           ? 3
           : 4;
 
+  const opponentStables = (mobile: boolean) =>
+    opponents.map((p) => (
+      <PlayerStable
+        key={p.id}
+        player={p}
+        winThreshold={view.winThreshold}
+        cardSize={mobile ? "sm" : "xs"}
+        compact={!mobile}
+        scrollCards={mobile}
+        targetableIds={boardTargetIds ?? undefined}
+        onCardClick={onBoardCardClick}
+        stableTargetable={stableChoicePlayerIds?.has(p.id)}
+        stablePreviewCard={decision?.stablePreviewCard}
+        onStableClick={onStableClick}
+      />
+    ));
+
+  const viewerStable = (mobile: boolean) => (
+    <PlayerStable
+      player={me}
+      winThreshold={view.winThreshold}
+      cardSize="sm"
+      scrollCards={mobile}
+      targetableIds={boardTargetIds ?? undefined}
+      selectedIds={selectedMulti}
+      onCardClick={onBoardCardClick}
+      isViewer
+      stableTargetable={stableChoicePlayerIds?.has(me.id)}
+      stablePreviewCard={decision?.stablePreviewCard}
+      onStableClick={onStableClick}
+    />
+  );
+
+  const piles = (
+    <div className="flex items-end justify-center gap-2 sm:gap-4">
+      <Pile label="Deck" count={view.deckCount}>
+        <CardBack size="md" count={view.deckCount} />
+      </Pile>
+      <Pile label="Discard" count={view.discardCount}>
+        {view.discardTop ? <CardView card={view.discardTop} size="md" /> : <EmptyPile />}
+      </Pile>
+      <Pile label="Nursery" count={view.nurseryCount}>
+        <div className="uu-card uu-cardback w-24 aspect-[5/7]">
+          <Sparkles className="size-5 text-pink-200/70" />
+        </div>
+      </Pile>
+    </div>
+  );
+
+  const drawDisabled = !isMyTurn || view.phase !== "action" || !!decision || !!view.reaction;
+  const endDisabled = !isMyTurn || !!decision || !!view.reaction;
+  const turnActions = (mobile: boolean) => (
+    <div className={mobile ? "grid grid-cols-2 gap-2" : "flex flex-col gap-1.5"}>
+      <Button
+        size={mobile ? "default" : "sm"}
+        disabled={drawDisabled}
+        onClick={() => {
+          audio.play("draw");
+          toastErr(actions.drawForTurn());
+        }}
+      >
+        <Layers data-icon="inline-start" /> Draw & end
+      </Button>
+      <Button
+        size={mobile ? "default" : "sm"}
+        variant="secondary"
+        disabled={endDisabled}
+        onClick={() => toastErr(actions.endTurn())}
+      >
+        End turn
+      </Button>
+    </div>
+  );
+
   return (
     <div className="uu-root uu-starfield relative flex h-dvh flex-col overflow-hidden">
       {/* top bar */}
-      <header className="relative z-20 flex items-center gap-3 px-3 py-2">
-        <span className="uu-display text-lg font-bold text-amber-200">
+      <header className="uu-game-header relative z-20 flex shrink-0 items-center gap-2 px-3 py-2">
+        <span className="uu-display hidden text-lg font-bold text-amber-200 sm:inline">
           <Sparkles className="mb-0.5 mr-1 inline size-4" />
           Unstable Unicorns
         </span>
-        <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">
-          Turn {view.turnNumber} · {playName(view.currentPlayerId)}
-          {isMyTurn ? " (you)" : ""}
+        <span className="uu-display text-sm font-bold text-amber-200 sm:hidden">
+          <Sparkles className="mr-1 inline size-3.5" />
+          UU
         </span>
-        <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs text-amber-100">
+        <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] sm:py-0.5 sm:text-xs">
+          Turn {view.turnNumber} · {playName(view.currentPlayerId)}
+          {isMyTurn ? " · you" : ""}
+        </span>
+        <span className="hidden rounded-full bg-amber-400/20 px-2 py-0.5 text-xs text-amber-100 sm:inline">
           <Trophy className="mb-0.5 mr-1 inline size-3" />
           Goal: {view.winThreshold} unicorns
         </span>
-        <div className="ml-auto flex items-center gap-2">
+        <span className="ml-auto flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-1 text-[10px] font-bold text-amber-100 sm:hidden">
+          <Trophy className="size-3" />
+          {me.unicornCount}/{view.winThreshold}
+          <Hand className="ml-1 size-3" />
+          {me.handCount}
+        </span>
+        <div className="flex items-center gap-2 sm:ml-auto">
           {seatSwitcher}
-          <AudioControl />
+          <AudioControl className="hidden sm:flex" />
+          <AudioControl compact className="sm:hidden" />
         </div>
       </header>
 
-      {/* opponents */}
+      {/* mobile table: every public zone stays inspectable while the hand remains docked */}
+      <main
+        className="uu-mobile-table relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-4 sm:hidden"
+        aria-label="Game table"
+      >
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/55">
+            <Users className="size-3.5" />
+            Opponent stables
+          </span>
+          <span className="text-[10px] text-white/40">Swipe to inspect</span>
+        </div>
+        <div className="uu-opponents-rail" role="region" aria-label="Opponent stables">
+          {opponentStables(true)}
+        </div>
+
+        <section className="py-5" aria-label="Card piles">
+          {piles}
+        </section>
+
+        <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-white/55">
+          Your stable
+        </div>
+        {viewerStable(true)}
+
+        <div className="mt-3">
+          <GameLog log={view.log} />
+        </div>
+      </main>
+
+      {/* desktop opponents */}
       <div
-        className="relative z-10 grid justify-center gap-2 px-3 py-1"
+        className="relative z-10 hidden justify-center gap-2 px-3 py-1 sm:grid"
         style={{ gridTemplateColumns: `repeat(${oppCols}, minmax(0, 1fr))`, maxWidth: "100%" }}
       >
-        {opponents.map((p) => (
-          <PlayerStable
-            key={p.id}
-            player={p}
-            winThreshold={view.winThreshold}
-            cardSize="xs"
-            compact
-            targetableIds={boardTargetIds ?? undefined}
-            onCardClick={onBoardCardClick}
-            stableTargetable={stableChoicePlayerIds?.has(p.id)}
-            stablePreviewCard={decision?.stablePreviewCard}
-            onStableClick={onStableClick}
-          />
-        ))}
+        {opponentStables(false)}
       </div>
 
-      {/* center: deck / discard / nursery */}
-      <div className="relative z-10 flex flex-1 items-center justify-center px-3">
-        <div className="flex items-end gap-4">
-          <Pile label="Deck" count={view.deckCount}>
-            <CardBack size="md" count={view.deckCount} />
-          </Pile>
-          <Pile label="Discard" count={view.discardCount}>
-            {view.discardTop ? <CardView card={view.discardTop} size="md" /> : <EmptyPile />}
-          </Pile>
-          <Pile label="Nursery" count={view.nurseryCount}>
-            <div className="uu-card uu-cardback w-24 aspect-[5/7]">
-              <Sparkles className="size-5 text-pink-200/70" />
-            </div>
-          </Pile>
-        </div>
+      {/* desktop center: deck / discard / nursery */}
+      <div className="relative z-10 hidden flex-1 items-center justify-center px-3 sm:flex">
+        {piles}
 
         <aside className="absolute inset-y-0 right-3 hidden w-72 items-center lg:flex">
           <GameLog log={view.log} />
@@ -170,43 +260,24 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
       </div>
 
       {/* viewer stable + hand */}
-      <footer className="relative z-10 px-3 pb-2">
-        <div className="mb-2 flex items-end justify-center gap-3">
-          <div className="flex-1 max-w-[640px]">
-            <PlayerStable
-              player={me}
-              winThreshold={view.winThreshold}
-              cardSize="sm"
-              targetableIds={boardTargetIds ?? undefined}
-              selectedIds={selectedMulti}
-              onCardClick={onBoardCardClick}
-              isViewer
-              stableTargetable={stableChoicePlayerIds?.has(me.id)}
-              stablePreviewCard={decision?.stablePreviewCard}
-              onStableClick={onStableClick}
-            />
+      <footer className="uu-game-footer relative z-20 shrink-0 px-3 pb-2">
+        <div className="mb-2 hidden items-end justify-center gap-3 sm:flex">
+          <div className="flex-1 max-w-[640px]">{viewerStable(false)}</div>
+          {turnActions(false)}
+        </div>
+
+        <div className="mb-1.5 sm:hidden">
+          <div className="mb-1 flex items-center justify-between text-[10px] font-medium text-white/50">
+            <span>
+              {isMyTurn
+                ? `Your ${view.phase} phase`
+                : `Waiting for ${playName(view.currentPlayerId)}`}
+            </span>
+            <span>
+              {view.actionsRemaining.plays} play · {view.actionsRemaining.draws} draw
+            </span>
           </div>
-          {/* turn actions */}
-          <div className="flex flex-col gap-1.5">
-            <Button
-              size="sm"
-              disabled={!isMyTurn || view.phase !== "action" || !!decision || !!view.reaction}
-              onClick={() => {
-                audio.play("draw");
-                toastErr(actions.drawForTurn());
-              }}
-            >
-              <Layers className="size-4" /> Draw & end
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={!isMyTurn || !!decision || !!view.reaction}
-              onClick={() => toastErr(actions.endTurn())}
-            >
-              End turn
-            </Button>
-          </div>
+          {turnActions(true)}
         </div>
 
         <HandFan

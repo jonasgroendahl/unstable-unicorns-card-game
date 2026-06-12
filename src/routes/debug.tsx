@@ -147,12 +147,12 @@ function LocalGame({ humans, bots }: { humans: number; bots: number }) {
   };
 
   const seatSwitcher = (
-    <div className="flex items-center gap-1">
-      <Eye className="size-3.5 text-white/50" />
+    <div className="flex min-w-0 items-center gap-1">
+      <Eye className="hidden size-3.5 text-white/50 sm:block" />
       <select
         value={viewerId}
         onChange={(e) => setViewerId(e.target.value)}
-        className="rounded-md border border-white/15 bg-black/40 px-2 py-1 text-xs text-white"
+        className="max-w-28 rounded-md border border-white/15 bg-black/40 px-2 py-1 text-xs text-white sm:max-w-none"
         title="Switch viewpoint (debug)"
       >
         {seats.map((s) => (

@@ -17,6 +17,7 @@ interface PlayerStableProps {
   stableTargetable?: boolean;
   stablePreviewCard?: CardViewData;
   onStableClick?: (playerId: string) => void;
+  scrollCards?: boolean;
 }
 
 export function PlayerStable({
@@ -31,6 +32,7 @@ export function PlayerStable({
   stableTargetable,
   stablePreviewCard,
   onStableClick,
+  scrollCards,
 }: PlayerStableProps) {
   const [isPreviewingPlacement, setIsPreviewingPlacement] = useState(false);
   const unicorns = player.stable.filter((c) => c.cardClass === "unicorn");
@@ -45,11 +47,12 @@ export function PlayerStable({
   return (
     <div
       className={cn(
-        "uu-glass rounded-xl p-2 transition-all",
+        "uu-player-stable uu-glass rounded-xl p-2 transition-all",
         player.isCurrent && "uu-glow-turn",
         stableTargetable && "uu-stable-target",
         compact ? "min-w-[150px]" : "min-w-[220px]",
       )}
+      data-scroll-cards={scrollCards ? "true" : undefined}
       data-stable-previewing={showStablePreview ? "true" : undefined}
       aria-label={stableTargetable ? `Attach card to ${player.name}'s Stable` : undefined}
       role={stableTargetable ? "button" : undefined}
@@ -106,7 +109,7 @@ export function PlayerStable({
       </div>
 
       {/* unicorns */}
-      <div className="flex flex-wrap gap-1">
+      <div className="uu-stable-card-row flex flex-wrap gap-1">
         {unicorns.length === 0 && (
           <span className="text-[10px] text-white/40">No unicorns yet</span>
         )}
@@ -125,7 +128,7 @@ export function PlayerStable({
 
       {/* upgrades / downgrades */}
       {(upgrades.length > 0 || downgrades.length > 0 || showStablePreview) && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-1 border-t border-white/10 pt-1.5">
+        <div className="uu-stable-modifier-row mt-1.5 flex flex-wrap items-center gap-1 border-t border-white/10 pt-1.5">
           {upgrades.map((c) => (
             <div key={c.instanceId} className="flex items-center">
               <ArrowBigUp className="size-3 text-emerald-300" />

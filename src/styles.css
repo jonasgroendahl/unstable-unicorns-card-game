@@ -425,6 +425,7 @@ a {
     box-shadow 160ms ease,
     border-color 160ms ease;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .uu-card img {
   width: 100%;
@@ -617,6 +618,9 @@ a {
   align-items: flex-end;
   padding-bottom: 6px;
 }
+.uu-desktop-hand {
+  display: none;
+}
 .uu-hand-card {
   transform-origin: bottom center;
   margin-inline: -14px;
@@ -626,6 +630,94 @@ a {
 }
 .uu-hand-card:hover {
   margin-inline: 4px;
+}
+
+.uu-mobile-table,
+.uu-opponents-rail,
+.uu-mobile-hand-rail,
+.uu-player-stable[data-scroll-cards="true"] .uu-stable-card-row,
+.uu-player-stable[data-scroll-cards="true"] .uu-stable-modifier-row,
+.uu-reaction-neighs {
+  scrollbar-width: none;
+}
+
+.uu-mobile-table::-webkit-scrollbar,
+.uu-opponents-rail::-webkit-scrollbar,
+.uu-mobile-hand-rail::-webkit-scrollbar,
+.uu-player-stable[data-scroll-cards="true"] .uu-stable-card-row::-webkit-scrollbar,
+.uu-player-stable[data-scroll-cards="true"] .uu-stable-modifier-row::-webkit-scrollbar,
+.uu-reaction-neighs::-webkit-scrollbar {
+  display: none;
+}
+
+.uu-opponents-rail {
+  display: flex;
+  gap: 0.625rem;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: x mandatory;
+  /* Vertical swipes that start on a Stable must still scroll the surrounding table. */
+  touch-action: pan-x pan-y;
+}
+
+.uu-opponents-rail > .uu-player-stable {
+  width: calc(100vw - 2.75rem);
+  min-width: calc(100vw - 2.75rem);
+  scroll-snap-align: center;
+}
+
+.uu-player-stable[data-scroll-cards="true"] .uu-stable-card-row,
+.uu-player-stable[data-scroll-cards="true"] .uu-stable-modifier-row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 3px 2px 7px;
+  scroll-snap-type: x proximity;
+  /* Long card rows are horizontal, but must not become vertical-scroll dead zones. */
+  touch-action: pan-x pan-y;
+}
+
+.uu-player-stable[data-scroll-cards="true"] .uu-stable-card-row > *,
+.uu-player-stable[data-scroll-cards="true"] .uu-stable-modifier-row > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.uu-mobile-hand {
+  min-width: 0;
+}
+
+.uu-mobile-hand-rail {
+  display: flex;
+  min-height: 11.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 5px calc(50% - 4rem) 8px;
+  scroll-padding-inline: calc(50% - 4rem);
+  scroll-snap-type: x mandatory;
+  touch-action: pan-x;
+}
+
+.uu-mobile-hand-card {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+.uu-mobile-hand-card .uu-card {
+  width: 8rem;
+}
+
+.uu-mobile-hand-card .uu-card[data-selected="true"] {
+  transform: translateY(-4px) scale(1.02);
+}
+
+@media (min-width: 640px) {
+  .uu-desktop-hand {
+    display: flex;
+  }
 }
 
 /* --- entrance / fx -------------------------------------------------- */
@@ -741,6 +833,25 @@ a {
     0 24px 70px rgba(0, 0, 0, 0.62),
     0 0 42px rgba(245, 197, 66, 0.12);
   animation: uu-reaction-dock-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.uu-reaction-layer {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.uu-decision-layer {
+  bottom: 210px;
+}
+
+.uu-decision-layer[data-centered="true"] {
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.uu-waiting-layer {
+  bottom: 210px;
 }
 
 .uu-reaction-progress {
@@ -870,6 +981,124 @@ a {
   background: rgba(20, 12, 40, 0.72);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 639px) {
+  .uu-root {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .uu-game-header {
+    background: rgba(20, 12, 40, 0.72);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+  }
+
+  .uu-game-footer {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    background:
+      radial-gradient(circle at 50% 0%, rgba(192, 132, 252, 0.15), transparent 55%),
+      rgba(19, 11, 37, 0.94);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 -16px 34px rgba(8, 4, 20, 0.35);
+    backdrop-filter: blur(16px);
+  }
+
+  .uu-mobile-table {
+    scroll-padding-block: 0.75rem;
+    touch-action: pan-y;
+  }
+
+  .uu-mobile-table .uu-player-stable {
+    background: rgba(20, 12, 40, 0.82);
+  }
+
+  .uu-card[data-playable="true"]:hover,
+  .uu-card[data-previewable="true"]:not([data-playable="true"]):not(
+      [data-targetable="true"]
+    ):hover {
+    transform: none;
+  }
+
+  .uu-reaction-layer {
+    top: auto;
+    bottom: 0;
+    align-items: flex-end;
+    padding: 0;
+    transform: none;
+  }
+
+  .uu-reaction-dock {
+    width: 100%;
+    max-height: 58dvh;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 1.25rem 1.25rem 0 0;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .uu-reaction-neighs {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 4px 2px 8px;
+    scroll-snap-type: x proximity;
+    touch-action: pan-x;
+  }
+
+  .uu-reaction-neighs > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .uu-neigh-scene {
+    margin-block: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .uu-decision-layer,
+  .uu-decision-layer[data-centered="true"] {
+    top: auto;
+    bottom: 0;
+    align-items: flex-end;
+    padding: 0;
+    transform: none;
+  }
+
+  .uu-decision-panel {
+    width: 100%;
+    max-width: none;
+    max-height: 58dvh;
+    overflow-y: auto;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 1.25rem 1.25rem 0 0;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .uu-decision-cards {
+    max-height: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 0.5rem calc(50% - 3rem);
+    scroll-padding-inline: calc(50% - 3rem);
+    scroll-snap-type: x mandatory;
+    touch-action: pan-x;
+  }
+
+  .uu-decision-cards > * {
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+  }
+
+  .uu-waiting-layer {
+    bottom: 20rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
