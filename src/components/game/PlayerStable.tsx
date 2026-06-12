@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Crown, Bot, Sparkles, ShieldAlert, ArrowBigUp, Hand, MousePointer2 } from "lucide-react";
+import {
+  Crown,
+  Bot,
+  Sparkles,
+  ShieldAlert,
+  ArrowBigUp,
+  Hand,
+  Maximize2,
+  MousePointer2,
+} from "lucide-react";
+import { Button } from "#/components/ui/button.tsx";
 import { cn } from "#/lib/utils.ts";
 import { CardView, type CardSize } from "./CardView.tsx";
 import type { PlayerView, CardView as CardViewData } from "#/game/view.ts";
@@ -18,6 +28,7 @@ interface PlayerStableProps {
   stablePreviewCard?: CardViewData;
   onStableClick?: (playerId: string) => void;
   scrollCards?: boolean;
+  onInspect?: () => void;
 }
 
 export function PlayerStable({
@@ -33,6 +44,7 @@ export function PlayerStable({
   stablePreviewCard,
   onStableClick,
   scrollCards,
+  onInspect,
 }: PlayerStableProps) {
   const [isPreviewingPlacement, setIsPreviewingPlacement] = useState(false);
   const unicorns = player.stable.filter((c) => c.cardClass === "unicorn");
@@ -89,6 +101,21 @@ export function PlayerStable({
             <Hand className="size-2.5" />
             {player.handCount}
           </span>
+        )}
+        {onInspect && !stableTargetable && (
+          <Button
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+            aria-label={`Inspect ${player.name}'s stable`}
+            title={`Inspect ${player.name}'s stable`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onInspect();
+            }}
+          >
+            <Maximize2 />
+          </Button>
         )}
         <div className="ml-auto flex items-center gap-1">
           <Sparkles className="size-3 text-amber-300" />

@@ -2,6 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Hand, Layers, Sparkles, Trophy, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button.tsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "#/components/ui/dialog.tsx";
 import { CardBack, CardView } from "./CardView.tsx";
 import { PlayerStable } from "./PlayerStable.tsx";
 import { HandFan } from "./HandFan.tsx";
@@ -52,6 +59,9 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
   }, [decision]);
 
   const [selectedMulti] = useState<Set<string>>(new Set());
+  const [inspectedOpponentId, setInspectedOpponentId] = useState<string | null>(null);
+  const inspectedOpponent = opponents.find((player) => player.id === inspectedOpponentId);
+  const stableDialogTitleRef = useRef<HTMLHeadingElement>(null);
 
   // Unlock audio + start (optional) background music on first user gesture.
   useEffect(() => {
@@ -95,17 +105,7 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
     actions.resolveDecision(playerId);
   };
 
-  // Responsive opponent layout: spread along the top, scaling with count.
-  const oppCols =
-    opponents.length <= 2
-      ? opponents.length
-      : opponents.length <= 4
-        ? 2
-        : opponents.length <= 6
-          ? 3
-          : 4;
-
-  const opponentStables = (mobile: boolean) =>
+  const opponentStables = (mobile: boolean, inspectable = false) =>
     opponents.map((p) => (
       <PlayerStable
         key={p.id}
@@ -113,12 +113,13 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
         winThreshold={view.winThreshold}
         cardSize={mobile ? "sm" : "xs"}
         compact={!mobile}
-        scrollCards={mobile}
+        scrollCards={mobile || inspectable}
         targetableIds={boardTargetIds ?? undefined}
         onCardClick={onBoardCardClick}
         stableTargetable={stableChoicePlayerIds?.has(p.id)}
         stablePreviewCard={decision?.stablePreviewCard}
         onStableClick={onStableClick}
+        onInspect={inspectable ? () => setInspectedOpponentId(p.id) : undefined}
       />
     ));
 
@@ -242,13 +243,22 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
         </div>
       </main>
 
-      {/* desktop opponents */}
-      <div
-        className="relative z-10 hidden justify-center gap-2 px-3 py-1 sm:grid"
-        style={{ gridTemplateColumns: `repeat(${oppCols}, minmax(0, 1fr))`, maxWidth: "100%" }}
+      {/* desktop opponents: one compact row keeps the hand in view */}
+      <section
+        className="relative z-10 hidden shrink-0 px-3 pb-1 pt-1 sm:block"
+        aria-label="Opponent stables"
       >
-        {opponentStables(false)}
-      </div>
+        <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[10px] font-bold uppercase tracking-wider text-white/55">
+          <span className="flex items-center gap-1.5">
+            <Users className="size-3.5" />
+            Opponent stables
+          </span>
+          <span className="font-medium normal-case tracking-normal text-white/40">
+            Scroll cards or open a stable to inspect
+          </span>
+        </div>
+        <div className="uu-desktop-opponents-rail">{opponentStables(false, true)}</div>
+      </section>
 
       {/* desktop center: deck / discard / nursery */}
       <div className="relative z-10 hidden flex-1 items-center justify-center px-3 sm:flex">
@@ -298,6 +308,50 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
       </footer>
 
       {/* overlays */}
+      <Dialog
+        open={Boolean(inspectedOpponent)}
+        onOpenChange={(open) => !open && setInspectedOpponentId(null)}
+      >
+        <DialogContent
+          className="uu-stable-dialog max-h-[min(90dvh,52rem)] max-w-[min(72rem,calc(100vw-2rem))] overflow-y-auto border-white/15 bg-[#160d2c]/95 p-4 text-white sm:max-w-[min(72rem,calc(100vw-2rem))]"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            stableDialogTitleRef.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle
+              ref={stableDialogTitleRef}
+              tabIndex={-1}
+              className="uu-display text-amber-100 outline-none"
+            >
+              {inspectedOpponent?.name ?? "Opponent"}&apos;s stable
+            </DialogTitle>
+            <DialogDescription className="text-white/55">
+              Full stable view. Select highlighted cards here or close to return to the table.
+            </DialogDescription>
+          </DialogHeader>
+          {inspectedOpponent && (
+            <PlayerStable
+              player={inspectedOpponent}
+              winThreshold={view.winThreshold}
+              cardSize="md"
+              targetableIds={boardTargetIds ?? undefined}
+              onCardClick={(card) => {
+                onBoardCardClick(card);
+                if (boardTargetIds?.has(card.instanceId)) setInspectedOpponentId(null);
+              }}
+              stableTargetable={stableChoicePlayerIds?.has(inspectedOpponent.id)}
+              stablePreviewCard={decision?.stablePreviewCard}
+              onStableClick={(playerId) => {
+                onStableClick(playerId);
+                if (stableChoicePlayerIds?.has(playerId)) setInspectedOpponentId(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {view.reaction && (
         <ReactionPrompt
           reaction={view.reaction}
