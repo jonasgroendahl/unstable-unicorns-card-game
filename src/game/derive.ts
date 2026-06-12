@@ -90,13 +90,14 @@ export function canBeSacrificed(state: GameState, inst: CardInstance): boolean {
   return !defOf(state, inst).cantBeSacrificedOrDestroyed;
 }
 
-/** Unicorn value of a single card (Ginormous = 2, everything else 1). */
+/** Unicorn value toward victory (Pandamonium = 0, Ginormous = 2, otherwise 1). */
 export function unicornValueOf(state: GameState, inst: CardInstance): number {
   if (!isUnicorn(state, inst)) return 0;
+  if (inst.ownerId && hasAura(state, inst.ownerId, "pandamonium")) return 0;
   return defOf(state, inst).unicornValue ?? 1;
 }
 
-/** Total unicorns in a player's stable (counts Babies; Ginormous as 2). */
+/** Total unicorn value toward victory (counts Babies; honors Pandamonium and Ginormous). */
 export function unicornCountFor(state: GameState, playerId: PlayerId): number {
   let n = 0;
   for (const id of state.stables[playerId] ?? []) {

@@ -33,9 +33,19 @@ interface GameRecord {
   subscribers: Map<string, (state: GameState) => void>;
 }
 
+interface RegistryStore {
+  games: Map<string, GameRecord>;
+  byCode: Map<string, string>;
+}
+
 class Registry {
-  private games = new Map<string, GameRecord>();
-  private byCode = new Map<string, string>();
+  private games: Map<string, GameRecord>;
+  private byCode: Map<string, string>;
+
+  constructor(store: RegistryStore) {
+    this.games = store.games;
+    this.byCode = store.byCode;
+  }
 
   createLobby(hostName: string): Lobby {
     const gameId = makeGameId();
@@ -150,6 +160,12 @@ class Registry {
   }
 }
 
-// Persist across HMR in dev.
-const g = globalThis as unknown as { __uuRegistry?: Registry };
-export const registry: Registry = g.__uuRegistry ?? (g.__uuRegistry = new Registry());
+// Persist game data across HMR, while recreating the Registry so its methods and
+// imported engine factory always use the latest server code.
+const g = globalThis as unknown as { __uuRegistryStore?: RegistryStore };
+const store: RegistryStore = g.__uuRegistryStore ?? {
+  games: new Map(),
+  byCode: new Map(),
+};
+g.__uuRegistryStore = store;
+export const registry = new Registry(store);

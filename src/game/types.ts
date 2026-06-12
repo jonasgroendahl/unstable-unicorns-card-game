@@ -35,7 +35,7 @@ export type SelectionKind = "targeted" | "self" | "mass";
 export type AuraKind =
   | "ginormous" // counts as 2 unicorns; controller can't play Neighs
   | "queenBee" // basic unicorns can't enter other players' stables
-  | "pandamonium" // your unicorns are Pandas: keep effects, immune to targeted unicorn effects
+  | "pandamonium" // your unicorns are Pandas: don't count toward victory; immune to targeted effects
   | "blindingLight" // your unicorns are basic with no effects
   | "yay" // cards you play can't be Neigh'd
   | "slowdown" // you can't play Neighs

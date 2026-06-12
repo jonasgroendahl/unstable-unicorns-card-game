@@ -213,4 +213,40 @@ describe("win condition", () => {
     expect(h.state.status).toBe("finished");
     expect(h.state.winnerId).toBe("p1");
   });
+
+  it("does not count Pandas toward victory until Pandamonium leaves the stable", async () => {
+    const h = new Harness();
+    await h.start();
+    for (const slug of [
+      "basic-unicorn-red",
+      "basic-unicorn-orange",
+      "basic-unicorn-yellow",
+      "basic-unicorn-green",
+      "basic-unicorn-blue",
+    ]) {
+      h.giveStable("p1", slug);
+    }
+    const pandamonium = h.giveStable("p1", "pandamonium");
+    const seventh = h.giveCard("p1", "basic-unicorn-indigo");
+
+    await h.play("p1", seventh);
+
+    expect(h.state.status).toBe("active");
+    expect(h.state.winnerId).toBeUndefined();
+    expect(sanitizeFor(h.state, "p1").players.find((p) => p.id === "p1")?.unicornCount).toBe(0);
+
+    const glitterTornado = h.giveCard("p2", "glitter-tornado");
+    h.setDecide((decision) => {
+      if (decision.kind === "chooseInstance" && decision.options.includes(pandamonium)) {
+        return pandamonium;
+      }
+      return decision.options[0] ?? true;
+    });
+
+    await h.play("p2", glitterTornado);
+
+    expect(h.state.instances[pandamonium].zone).toBe("hand");
+    expect(h.state.status).toBe("finished");
+    expect(h.state.winnerId).toBe("p1");
+  });
 });

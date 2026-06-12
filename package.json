@@ -10,6 +10,7 @@
     "generate-routes": "tsr generate",
     "gen-cards": "node scripts/gen-card-data.mjs",
     "build": "vp build",
+    "start": "srvx serve --prod --dir=. --entry=.nitro/vite/services/ssr/server.js --static=.output/public",
     "preview": "vp preview",
     "test": "vp test run --config vitest.config.ts",
     "prepare": "vp config"
@@ -35,6 +36,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "sonner": "^2.0.7",
+    "srvx": "^0.11.16",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.1.18",
     "tw-animate-css": "^1.3.6",

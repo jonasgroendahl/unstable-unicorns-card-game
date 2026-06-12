@@ -24,10 +24,10 @@ pnpm dev          # http://localhost:3000
   and fully implemented effects — Magical Unicorns, Magic, Upgrades, Downgrades,
   Neigh / Super Neigh, and every aura/replacement/triggered interaction.
 - **The Neigh reaction window** — when any card is played, every eligible player
-  gets a ~5‑second window to Neigh it. Neighs chain (odd count cancels, even
+  gets a ~20-second window to Neigh it. Neighs chain (odd count cancels, even
   resolves); Super Neigh ends the chain. Yay / Slowdown / Ginormous are honored.
-- **Continuous auras & edge cases** — Pandamonium (Pandas immune to _targeted_
-  unicorn effects), Blinding Light, Queen Bee, Rainbow Aura, Tiny Stable,
+- **Continuous auras & edge cases** — Pandamonium (Pandas do not count toward
+  victory and are immune to _targeted_ unicorn effects), Blinding Light, Queen Bee, Rainbow Aura, Tiny Stable,
   Barbed Wire, Black Knight & Phoenix replacement effects, Unicorn Lasso borrow/
   return, Puppicorn relocation, Change of Luck extra turns, and more.
 - **Realtime multiplayer** — authoritative in‑memory engine on the server, SSE
