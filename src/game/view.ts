@@ -60,12 +60,14 @@ export interface GameView {
 export interface DecisionView extends PendingDecision {
   /** Resolved option cards for instance/option decisions (for rendering). */
   optionCards?: CardView[];
+  /** Card rendered temporarily inside a hovered Stable destination. */
+  stablePreviewCard?: CardView;
 }
 
 export interface ReactionView {
   targetCard: CardView | null;
   targetByPlayer: PlayerId;
-  chain: { byPlayer: PlayerId; name: string }[];
+  chain: { byPlayer: PlayerId; card: CardView }[];
   closesAt: number;
   /** Whether the viewer is allowed to respond right now. */
   canRespond: boolean;
@@ -122,6 +124,12 @@ export function sanitizeFor(state: GameState, viewerId: PlayerId): GameView {
         .filter((id) => state.instances[id])
         .map((id) => toCardView(state, id));
     }
+    if (
+      liveDecision.stablePreviewInstanceId &&
+      state.instances[liveDecision.stablePreviewInstanceId]
+    ) {
+      decision.stablePreviewCard = toCardView(state, liveDecision.stablePreviewInstanceId);
+    }
   }
 
   const someoneDeciding =
@@ -170,7 +178,7 @@ function buildReactionView(state: GameState, viewerId: PlayerId, rx: ReactionSta
     targetByPlayer: rx.targetByPlayer,
     chain: rx.chain.map((l) => ({
       byPlayer: l.byPlayer,
-      name: getDefinition(state.instances[l.instanceId].defId).name,
+      card: toCardView(state, l.instanceId),
     })),
     closesAt: rx.closesAt,
     canRespond: rx.awaitingFrom.includes(viewerId),

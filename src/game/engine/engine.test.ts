@@ -34,6 +34,31 @@ describe("playing a basic unicorn", () => {
   });
 });
 
+describe("attaching an Upgrade or Downgrade", () => {
+  it("exposes the played card as an inline Stable placement preview", async () => {
+    const h = new Harness();
+    await h.start();
+    const upgrade = h.giveCard("p1", "rainbow-aura");
+    let sawPreview = false;
+
+    h.setDecide((decision, state) => {
+      if (decision.kind !== "choosePlayer") return decision.options[0] ?? true;
+
+      const view = sanitizeFor(state, "p1");
+      expect(decision.stablePreviewInstanceId).toBe(upgrade);
+      expect(view.decision?.stablePreviewCard?.instanceId).toBe(upgrade);
+      sawPreview = true;
+      return "p2";
+    });
+
+    await h.play("p1", upgrade);
+
+    expect(sawPreview).toBe(true);
+    expect(h.state.instances[upgrade].ownerId).toBe("p2");
+    expect(h.state.instances[upgrade].zone).toBe("stable");
+  });
+});
+
 describe("Unicorn Poison destroys a unicorn", () => {
   it("sends the chosen unicorn to the discard pile", async () => {
     const h = new Harness();
@@ -80,6 +105,36 @@ describe("Neigh cancels a played card", () => {
     });
     await h.play("p1", basic);
     expect(h.stableSlugs("p1")).toContain("basic-unicorn-green");
+  });
+
+  it("exposes the played Neigh card and player during a counter-Neigh window", async () => {
+    const h = new Harness({
+      seats: [
+        { id: "p1", name: "Alice", isBot: false },
+        { id: "p2", name: "Bob", isBot: false },
+        { id: "p3", name: "Charlie", isBot: false },
+      ],
+    });
+    await h.start();
+    const basic = h.giveCard("p1", "basic-unicorn-blue");
+    const firstNeigh = h.giveCard("p2", "neigh");
+    h.giveCard("p3", "neigh");
+    let sawRevealData = false;
+
+    h.setReact((pid, state) => {
+      if (pid === "p2" && state.reaction?.chain.length === 0) return firstNeigh;
+      if (state.reaction?.chain.length === 1) {
+        const latest = sanitizeFor(state, pid).reaction?.chain.at(-1);
+        expect(latest?.byPlayer).toBe("p2");
+        expect(latest?.card.instanceId).toBe(firstNeigh);
+        expect(latest?.card.name).toBe("Neigh");
+        sawRevealData = true;
+      }
+      return null;
+    });
+
+    await h.play("p1", basic);
+    expect(sawRevealData).toBe(true);
   });
 });
 

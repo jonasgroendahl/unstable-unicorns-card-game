@@ -46,6 +46,10 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
     if (opts.length === decision.options.length && opts.length > 0) return new Set(opts);
     return null;
   }, [decision, view.players]);
+  const stableChoicePlayerIds = useMemo(() => {
+    if (decision?.kind !== "choosePlayer" || !decision.stablePreviewCard) return null;
+    return new Set(decision.options);
+  }, [decision]);
 
   const [selectedMulti] = useState<Set<string>>(new Set());
 
@@ -84,6 +88,11 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
       audio.play("click");
       actions.resolveDecision(card.instanceId);
     }
+  };
+  const onStableClick = (playerId: string) => {
+    if (!stableChoicePlayerIds?.has(playerId)) return;
+    audio.play("click");
+    actions.resolveDecision(playerId);
   };
 
   // Responsive opponent layout: spread along the top, scaling with count.
@@ -132,6 +141,9 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
             compact
             targetableIds={boardTargetIds ?? undefined}
             onCardClick={onBoardCardClick}
+            stableTargetable={stableChoicePlayerIds?.has(p.id)}
+            stablePreviewCard={decision?.stablePreviewCard}
+            onStableClick={onStableClick}
           />
         ))}
       </div>
@@ -169,6 +181,9 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
               selectedIds={selectedMulti}
               onCardClick={onBoardCardClick}
               isViewer
+              stableTargetable={stableChoicePlayerIds?.has(me.id)}
+              stablePreviewCard={decision?.stablePreviewCard}
+              onStableClick={onStableClick}
             />
           </div>
           {/* turn actions */}
@@ -229,6 +244,7 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
           decision={decision}
           playerName={playName}
           inlineTargets={!!boardTargetIds}
+          inlinePlayerTargets={!!stableChoicePlayerIds}
           onAnswer={(v) => actions.resolveDecision(v)}
         />
       )}

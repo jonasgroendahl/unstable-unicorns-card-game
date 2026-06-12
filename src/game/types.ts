@@ -141,11 +141,15 @@ export interface PendingDecision {
   may?: boolean;
   /** The card that triggered this decision (UI + log). */
   sourceInstanceId?: InstanceId;
+  /** Card to preview inside a hovered Stable while choosing its destination. */
+  stablePreviewInstanceId?: InstanceId;
 }
 
 // ---------------------------------------------------------------------------
 // Reaction (Neigh) window
 // ---------------------------------------------------------------------------
+
+export const REACTION_WINDOW_MS = 20_000;
 
 export interface ReactionLink {
   instanceId: InstanceId; // the Neigh/Super Neigh card played
@@ -225,6 +229,12 @@ export interface ChooseInstanceOpts {
   minMax?: [number, number];
 }
 
+export interface ChoosePlayerOpts {
+  may?: boolean;
+  prompt: string;
+  stablePreviewInstanceId?: InstanceId;
+}
+
 /**
  * The interface card effects use to read/mutate the game. All target-selection
  * helpers compute legal options and resolve immediately to null/[] when empty,
@@ -286,7 +296,7 @@ export interface EffectContext {
   choosePlayer(
     playerId: PlayerId,
     options: PlayerId[],
-    opts: { may?: boolean; prompt: string },
+    opts: ChoosePlayerOpts,
   ): Promise<PlayerId | null>;
   chooseOption(
     playerId: PlayerId,

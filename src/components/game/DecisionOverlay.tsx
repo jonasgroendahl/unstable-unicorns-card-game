@@ -11,6 +11,8 @@ interface DecisionOverlayProps {
   playerName: (id: string) => string;
   /** True when the decision targets board cards that are highlighted in place. */
   inlineTargets?: boolean;
+  /** True when the decision is answered by clicking a highlighted player Stable. */
+  inlinePlayerTargets?: boolean;
   onAnswer: (value: Answer) => void;
 }
 
@@ -23,6 +25,7 @@ export function DecisionOverlay({
   decision,
   playerName,
   inlineTargets,
+  inlinePlayerTargets,
   onAnswer,
 }: DecisionOverlayProps) {
   const [min, max] = decision.minMax ?? [1, 1];
@@ -49,6 +52,22 @@ export function DecisionOverlay({
   }
 
   if (decision.kind === "choosePlayer") {
+    if (inlinePlayerTargets) {
+      return (
+        <Banner
+          prompt={decision.prompt}
+          subtitle="Hover a highlighted Stable to preview the card, then click to attach it."
+          centered
+        >
+          {decision.may && (
+            <Button variant="ghost" onClick={() => onAnswer(null)}>
+              Decline
+            </Button>
+          )}
+        </Banner>
+      );
+    }
+
     return (
       <Banner prompt={decision.prompt}>
         <div className="flex flex-wrap justify-center gap-2">
@@ -149,16 +168,24 @@ function Banner({
   prompt,
   subtitle,
   children,
+  centered,
 }: {
   prompt: string;
   subtitle?: string;
   children?: React.ReactNode;
+  centered?: boolean;
 }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[210px] z-40 flex justify-center px-4">
+    <div
+      className={cn(
+        "pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4",
+        centered ? "top-1/2 -translate-y-1/2" : "bottom-[210px]",
+      )}
+    >
       <div
         className={cn(
-          "uu-glass uu-pop pointer-events-auto max-w-[92vw] rounded-2xl p-4 text-center shadow-2xl",
+          "uu-glass uu-pop max-w-[92vw] rounded-2xl p-4 text-center shadow-2xl",
+          children ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
         <p className="uu-display mb-1 text-base font-bold text-amber-100">{prompt}</p>

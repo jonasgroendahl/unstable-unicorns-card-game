@@ -26,23 +26,23 @@ import {
   unicornCountFor,
   winThreshold,
 } from "../derive";
-import type {
-  CardClass,
-  CardDefinition,
-  CardInstance,
-  ChooseInstanceOpts,
-  EffectContext,
-  GameEvent,
-  GameState,
-  InstanceId,
-  PendingDecision,
-  PlayerId,
-  SelectionKind,
-  Zone,
+import {
+  REACTION_WINDOW_MS,
+  type CardClass,
+  type CardDefinition,
+  type CardInstance,
+  type ChooseInstanceOpts,
+  type ChoosePlayerOpts,
+  type EffectContext,
+  type GameEvent,
+  type GameState,
+  type InstanceId,
+  type PendingDecision,
+  type PlayerId,
+  type SelectionKind,
+  type Zone,
 } from "../types";
 import { EndTurnSignal, makeDeferred, type Deferred } from "./signals";
-
-const REACTION_MS = 5000;
 
 type DecisionResolution = string | string[] | boolean | null;
 
@@ -287,7 +287,7 @@ export class GameEngine {
   private async choosePlayer(
     playerId: PlayerId,
     options: PlayerId[],
-    opts: { may?: boolean; prompt: string },
+    opts: ChoosePlayerOpts,
   ): Promise<PlayerId | null> {
     if (options.length === 0) return null;
     const res = await this.ask({
@@ -296,6 +296,7 @@ export class GameEngine {
       prompt: opts.prompt,
       options,
       may: opts.may,
+      stablePreviewInstanceId: opts.stablePreviewInstanceId,
     });
     return typeof res === "string" ? res : null;
   }
@@ -733,10 +734,10 @@ export class GameEngine {
       targetByPlayer,
       chain: chain.slice(),
       awaitingFrom: responders.slice(),
-      closesAt: Date.now() + REACTION_MS,
+      closesAt: Date.now() + REACTION_WINDOW_MS,
     };
     this.clearReactionTimer();
-    this.reactionTimer = setTimeout(() => deferred.resolve(null), REACTION_MS);
+    this.reactionTimer = setTimeout(() => deferred.resolve(null), REACTION_WINDOW_MS);
     this.broadcast();
     return deferred.promise;
   }
@@ -921,6 +922,7 @@ export class GameEngine {
             def.cardClass === "downgrade"
               ? "Attach this Downgrade to which player's Stable?"
               : "Attach this Upgrade to which player's Stable?",
+          stablePreviewInstanceId: inst.instanceId,
         });
         const dest = target ?? playerId;
         this.relocateCard(inst.instanceId, dest, "stable");

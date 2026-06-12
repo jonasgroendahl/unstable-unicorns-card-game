@@ -31,6 +31,7 @@ interface CardViewProps {
   selected?: boolean;
   dealIn?: boolean;
   autoDrawn?: boolean;
+  previewOnly?: boolean;
   className?: string;
   onClick?: () => void;
   title?: string;
@@ -45,42 +46,48 @@ export function CardView({
   selected,
   dealIn,
   autoDrawn,
+  previewOnly,
   className,
   onClick,
   title,
 }: CardViewProps) {
   const cardTitle = title ?? `${card.name} — ${KIND_LABEL[card.kind] ?? card.kind}`;
 
+  const cardElement = (
+    <div
+      className={cn("uu-card group", SIZES[size], dealIn && "uu-deal-in", className)}
+      data-kind={card.kind}
+      data-playable={playable ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
+      data-targetable={targetable ? "true" : undefined}
+      data-selected={selected ? "true" : undefined}
+      data-auto-drawn={autoDrawn ? "true" : undefined}
+      data-previewable={previewOnly ? undefined : "true"}
+      aria-hidden={previewOnly ? true : undefined}
+      aria-label={previewOnly ? undefined : cardTitle}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+    >
+      <img src={card.image} alt={previewOnly ? "" : card.name} loading="lazy" draggable={false} />
+      {autoDrawn && (
+        <span className="uu-auto-drawn-label">
+          <Sparkles className="size-3" />
+          Auto-drawn
+        </span>
+      )}
+      {card.borrowed && (
+        <span className="absolute right-1 top-1 rounded bg-black/70 px-1 text-[9px] font-semibold text-amber-200">
+          <Sparkles className="inline size-2.5" /> lasso
+        </span>
+      )}
+    </div>
+  );
+
+  if (previewOnly) return cardElement;
+
   return (
     <HoverCard openDelay={180} closeDelay={80}>
-      <HoverCardTrigger asChild>
-        <div
-          className={cn("uu-card group", SIZES[size], dealIn && "uu-deal-in", className)}
-          data-kind={card.kind}
-          data-playable={playable ? "true" : undefined}
-          data-disabled={disabled ? "true" : undefined}
-          data-targetable={targetable ? "true" : undefined}
-          data-selected={selected ? "true" : undefined}
-          data-auto-drawn={autoDrawn ? "true" : undefined}
-          data-previewable="true"
-          aria-label={cardTitle}
-          onClick={onClick}
-          role={onClick ? "button" : undefined}
-        >
-          <img src={card.image} alt={card.name} loading="lazy" draggable={false} />
-          {autoDrawn && (
-            <span className="uu-auto-drawn-label">
-              <Sparkles className="size-3" />
-              Auto-drawn
-            </span>
-          )}
-          {card.borrowed && (
-            <span className="absolute right-1 top-1 rounded bg-black/70 px-1 text-[9px] font-semibold text-amber-200">
-              <Sparkles className="inline size-2.5" /> lasso
-            </span>
-          )}
-        </div>
-      </HoverCardTrigger>
+      <HoverCardTrigger asChild>{cardElement}</HoverCardTrigger>
       <HoverCardContent
         sideOffset={14}
         collisionPadding={16}
