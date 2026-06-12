@@ -7,23 +7,27 @@ import { LocalGameClient } from "#/lib/gameClient.ts";
 import { useGameView } from "#/lib/useGameView.ts";
 import { audio } from "#/lib/audio.ts";
 import type { SeatConfig } from "#/game/state.ts";
+import { DeckPicker } from "#/components/game/DeckPicker.tsx";
+import { DEFAULT_DECK_ID, type DeckId } from "#/game/decks.ts";
 
 export const Route = createFileRoute("/debug")({ component: DebugGame });
 
 interface Setup {
   humans: number;
   bots: number;
+  deckId: DeckId;
 }
 
 function DebugGame() {
   const [setup, setSetup] = useState<Setup | null>(null);
   if (!setup) return <SetupScreen onStart={setSetup} />;
-  return <LocalGame humans={setup.humans} bots={setup.bots} />;
+  return <LocalGame humans={setup.humans} bots={setup.bots} deckId={setup.deckId} />;
 }
 
 function SetupScreen({ onStart }: { onStart: (s: Setup) => void }) {
   const [humans, setHumans] = useState(1);
   const [bots, setBots] = useState(3);
+  const [deckId, setDeckId] = useState<DeckId>(DEFAULT_DECK_ID);
   const total = humans + bots;
   return (
     <div className="uu-root uu-starfield flex min-h-dvh items-center justify-center p-6">
@@ -42,6 +46,7 @@ function SetupScreen({ onStart }: { onStart: (s: Setup) => void }) {
           onChange={setHumans}
         />
         <Stepper label="AI bots" value={bots} min={0} max={8} onChange={setBots} />
+        <DeckPicker value={deckId} onChange={setDeckId} />
 
         <p className="mt-3 text-xs text-white/50">
           {total < 2
@@ -56,7 +61,7 @@ function SetupScreen({ onStart }: { onStart: (s: Setup) => void }) {
           disabled={total < 2 || total > 8}
           onClick={() => {
             audio.unlock();
-            onStart({ humans, bots });
+            onStart({ humans, bots, deckId });
           }}
         >
           Start game
@@ -95,7 +100,7 @@ function Stepper({
   );
 }
 
-function LocalGame({ humans, bots }: { humans: number; bots: number }) {
+function LocalGame({ humans, bots, deckId }: { humans: number; bots: number; deckId: DeckId }) {
   const seats = useMemo<SeatConfig[]>(() => {
     const s: SeatConfig[] = [];
     for (let i = 0; i < humans; i++) s.push({ id: `h${i}`, name: `Player ${i + 1}`, isBot: false });
@@ -104,7 +109,7 @@ function LocalGame({ humans, bots }: { humans: number; bots: number }) {
   }, [humans, bots]);
 
   const clientRef = useRef<LocalGameClient | null>(null);
-  if (!clientRef.current) clientRef.current = new LocalGameClient(seats);
+  if (!clientRef.current) clientRef.current = new LocalGameClient(seats, undefined, deckId);
   const client = clientRef.current;
 
   // The viewpoint: default to the first human, or seat 0.
@@ -115,24 +120,36 @@ function LocalGame({ humans, bots }: { humans: number; bots: number }) {
     return () => client.dispose();
   }, [client]);
 
-  // Auto-follow the current player's seat when there are no humans (spectate bots),
-  // or when the active human changes (hotseat convenience).
+  // Auto-follow the human who owes input, or the current player while spectating bots.
   const view = useGameView(client, viewerId);
 
   useEffect(() => {
     if (!view) return;
-    // In a hotseat game, auto-switch viewpoint to whoever's turn it is (if human).
+
+    // In hotseat, hand the screen to the next human who owes input. Reactions
+    // take priority so every Neigh opens a visible counter-Neigh opportunity.
     if (humans > 1) {
-      const cur = seats.find((s) => s.id === view.currentPlayerId);
-      if (cur && !cur.isBot && view.currentPlayerId !== viewerId) {
-        setViewerId(view.currentPlayerId);
+      const humanIds = new Set(seats.filter((seat) => !seat.isBot).map((seat) => seat.id));
+      const reactionResponder = client.engine.state.reaction?.awaitingFrom.find((id) =>
+        humanIds.has(id),
+      );
+      const liveDecision = client.engine.state.pendingDecisions.at(-1);
+      const decisionResponder =
+        liveDecision && humanIds.has(liveDecision.playerId) ? liveDecision.playerId : undefined;
+      const currentHuman = humanIds.has(view.currentPlayerId) ? view.currentPlayerId : undefined;
+      const nextViewerId = reactionResponder ?? decisionResponder ?? currentHuman;
+
+      if (nextViewerId && nextViewerId !== viewerId) {
+        setViewerId(nextViewerId);
       }
+      return;
     }
+
     // Pure bot game: follow the action.
     if (humans === 0 && view.currentPlayerId !== viewerId) {
       setViewerId(view.currentPlayerId);
     }
-  }, [view?.currentPlayerId, humans, seats, viewerId, view]);
+  }, [client, humans, seats, view, viewerId]);
 
   if (!view) return null;
 

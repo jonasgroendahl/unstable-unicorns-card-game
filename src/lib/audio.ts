@@ -1,11 +1,12 @@
-// Procedural sound effects via the Web Audio API (no asset files required) plus
-// an optional background-music loader that plays /audio/music.* if present and
-// stays silent otherwise. Volume/mute persist to localStorage.
+// Procedural sound effects and fallback music via the Web Audio API, with
+// optional drop-in background music at /audio/music.*. Preferences persist to
+// localStorage.
 
 type Sfx =
   | "play"
   | "draw"
   | "neigh"
+  | "neighed"
   | "destroy"
   | "sacrifice"
   | "steal"
@@ -40,6 +41,9 @@ class AudioManager {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private music: HTMLAudioElement | null = null;
+  private musicMaster: GainNode | null = null;
+  private musicTimer: ReturnType<typeof setInterval> | null = null;
+  private musicStep = 0;
   private musicTried = false;
   prefs: AudioPrefs = loadPrefs();
   private listeners = new Set<() => void>();
@@ -81,20 +85,23 @@ class AudioManager {
     }
     if (this.master) this.master.gain.value = this.prefs.muted ? 0 : this.prefs.sfxVolume;
     if (this.music) this.music.volume = this.prefs.muted ? 0 : this.prefs.musicVolume;
+    if (this.musicMaster) {
+      this.musicMaster.gain.value = this.prefs.muted ? 0 : this.prefs.musicVolume * 0.12;
+    }
     this.notify();
   }
 
   setMuted(muted: boolean) {
-    this.prefs.muted = muted;
+    this.prefs = { ...this.prefs, muted };
     if (!muted) this.ensureCtx();
     this.persist();
   }
   setSfxVolume(v: number) {
-    this.prefs.sfxVolume = Math.max(0, Math.min(1, v));
+    this.prefs = { ...this.prefs, sfxVolume: Math.max(0, Math.min(1, v)) };
     this.persist();
   }
   setMusicVolume(v: number) {
-    this.prefs.musicVolume = Math.max(0, Math.min(1, v));
+    this.prefs = { ...this.prefs, musicVolume: Math.max(0, Math.min(1, v)) };
     this.persist();
   }
 
@@ -148,6 +155,11 @@ class AudioManager {
         this.tone({ freq: 880, type: "sawtooth", dur: 0.28, slideTo: 180, gain: 0.32 });
         this.tone({ freq: 660, type: "square", dur: 0.18, slideTo: 140, gain: 0.18, delay: 0.04 });
         break;
+      case "neighed":
+        // A sharp rejection followed by the cancelled card falling away.
+        this.chord([740, 554], 0.16, "square");
+        this.tone({ freq: 360, type: "sawtooth", dur: 0.42, slideTo: 70, gain: 0.36, delay: 0.1 });
+        break;
       case "destroy":
         this.tone({ freq: 200, type: "sawtooth", dur: 0.3, slideTo: 60, gain: 0.4 });
         break;
@@ -176,25 +188,84 @@ class AudioManager {
   startMusic() {
     if (typeof Audio === "undefined" || this.musicTried) return;
     this.musicTried = true;
-    // Try a few common drop-in filenames; silently give up if none exist.
-    const candidates = ["/audio/music.mp3", "/audio/music.ogg", "/audio/theme.mp3"];
+    // Try common drop-in filenames first, then use synthesized music so a
+    // missing production asset never leaves the music control doing nothing.
+    const candidates = [
+      "/audio/music.mp3",
+      "/audio/music.ogg",
+      "/audio/theme.mp3",
+      "/audio/music.wav",
+    ];
     const tryNext = (i: number) => {
-      if (i >= candidates.length) return;
+      if (i >= candidates.length) {
+        this.startProceduralMusic();
+        return;
+      }
       const a = new Audio(candidates[i]);
       a.loop = true;
+      a.preload = "auto";
       a.volume = this.prefs.muted ? 0 : this.prefs.musicVolume;
-      a.addEventListener("canplaythrough", () => {
-        this.music = a;
-        void a.play().catch(() => {});
-      });
-      a.addEventListener("error", () => tryNext(i + 1));
-      a.load();
+      this.music = a;
+
+      let advanced = false;
+      const next = () => {
+        if (advanced) return;
+        advanced = true;
+        a.pause();
+        if (this.music === a) this.music = null;
+        tryNext(i + 1);
+      };
+
+      a.addEventListener("error", next, { once: true });
+      // Calling play during the user gesture avoids production autoplay blocks
+      // while the browser buffers the file.
+      void a.play().catch(next);
     };
     tryNext(0);
   }
 
+  private startProceduralMusic() {
+    if (this.musicTimer) return;
+    const ctx = this.ensureCtx();
+    if (!ctx) return;
+
+    this.musicMaster = ctx.createGain();
+    this.musicMaster.gain.value = this.prefs.muted ? 0 : this.prefs.musicVolume * 0.12;
+    this.musicMaster.connect(ctx.destination);
+
+    const playStep = () => {
+      const melody = [261.63, 329.63, 392, 493.88, 392, 329.63, 293.66, 349.23];
+      const note = melody[this.musicStep % melody.length];
+      this.musicTone(note, 1.25, 0.24, "sine");
+      if (this.musicStep % 4 === 0) this.musicTone(note / 2, 2.5, 0.18, "triangle");
+      this.musicStep += 1;
+    };
+
+    playStep();
+    this.musicTimer = setInterval(playStep, 900);
+  }
+
+  private musicTone(freq: number, dur: number, gain: number, type: OscillatorType) {
+    const ctx = this.ctx;
+    if (!ctx || !this.musicMaster) return;
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const envelope = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    envelope.gain.setValueAtTime(0.0001, t0);
+    envelope.gain.exponentialRampToValueAtTime(gain, t0 + 0.08);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(envelope);
+    envelope.connect(this.musicMaster);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+
   stopMusic() {
     this.music?.pause();
+    if (this.musicTimer) clearInterval(this.musicTimer);
+    this.musicTimer = null;
   }
 }
 

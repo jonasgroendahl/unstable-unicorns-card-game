@@ -6,6 +6,7 @@ import { GameEngine } from "./GameEngine";
 import { createInitialState, type SeatConfig } from "../state";
 import { getDefinition } from "../cards";
 import type { GameState, InstanceId, PendingDecision, PlayerId } from "../types";
+import { DEFAULT_DECK_ID, type DeckId } from "../decks";
 
 export type DecisionPolicy = (
   decision: PendingDecision,
@@ -21,6 +22,7 @@ export interface HarnessOptions {
   decide?: DecisionPolicy;
   /** Default reaction policy (always pass). */
   react?: ReactionPolicy;
+  deckId?: DeckId;
 }
 
 const DEFAULT_SEATS: SeatConfig[] = [
@@ -35,7 +37,12 @@ export class Harness {
 
   constructor(opts: HarnessOptions = {}) {
     const seats = opts.seats ?? DEFAULT_SEATS;
-    const state = createInitialState(seats, opts.seed ?? 12345, "test-game");
+    const state = createInitialState(
+      seats,
+      opts.seed ?? 12345,
+      "test-game",
+      opts.deckId ?? DEFAULT_DECK_ID,
+    );
     this.engine = new GameEngine(state);
     this.decide = opts.decide ?? ((d) => firstAnswer(d));
     this.react = opts.react ?? (() => null);

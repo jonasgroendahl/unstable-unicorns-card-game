@@ -8,7 +8,9 @@ import { GameEngine } from "../game/engine/GameEngine";
 import { makeGameId, makeJoinCode } from "../game/ids";
 import { createGame } from "../game/index";
 import type { GameState } from "../game/types";
+import { DEFAULT_DECK_ID, type DeckId } from "../game/decks";
 import { createGamePersistence, type GamePersistence, type PersistedGame } from "./persistence";
+import { buildGameHistoryData, type CompletedGame, type GameHistoryData } from "./gameHistory";
 
 export interface LobbySeat {
   id: string;
@@ -23,6 +25,7 @@ export interface Lobby {
   hostId: string;
   seats: LobbySeat[];
   status: "lobby" | "active" | "finished";
+  deckId: DeckId;
   createdAt: number;
 }
 
@@ -54,7 +57,10 @@ export function createRegistryStore(persistence = createGamePersistence()): Regi
 export class Registry {
   constructor(private store: RegistryStore) {}
 
-  async createLobby(hostName: string): Promise<Lobby> {
+  async createLobby(hostName: string, deckId: DeckId = DEFAULT_DECK_ID): Promise<Lobby> {
+    const normalizedHostName = hostName.trim();
+    if (!normalizedHostName) throw new Error("A host name is required.");
+
     for (let attempt = 0; attempt < 20; attempt++) {
       const gameId = makeGameId();
       const joinCode = makeJoinCode();
@@ -65,8 +71,9 @@ export class Registry {
         gameId,
         joinCode,
         hostId,
-        seats: [{ id: hostId, name: hostName || "Host", isBot: false, connected: true }],
+        seats: [{ id: hostId, name: normalizedHostName, isBot: false, connected: true }],
         status: "lobby",
+        deckId,
         createdAt: Date.now(),
       };
       const created = await this.store.persistence.create({ lobby, state: null });
@@ -130,12 +137,22 @@ export class Registry {
     await this.persistAndFlush(rec);
   }
 
+  async setLobbyDeck(gameId: string, playerId: string, deckId: DeckId): Promise<Lobby | undefined> {
+    const rec = await this.getRecord(gameId);
+    if (!rec || rec.lobby.status !== "lobby" || rec.lobby.hostId !== playerId) return undefined;
+
+    rec.lobby.deckId = deckId;
+    await this.persistAndFlush(rec);
+    return rec.lobby;
+  }
+
   async startGame(gameId: string): Promise<boolean> {
     const rec = await this.getRecord(gameId);
     if (!rec || rec.lobby.status !== "lobby" || rec.lobby.seats.length < 2) return false;
 
     rec.engine = createGame({
       gameId,
+      deckId: rec.lobby.deckId,
       seats: rec.lobby.seats.map((s) => ({ id: s.id, name: s.name, isBot: s.isBot })),
     });
     rec.lobby.status = "active";
@@ -149,6 +166,10 @@ export class Registry {
 
   async getEngine(gameId: string): Promise<GameEngine | undefined> {
     return (await this.getRecord(gameId))?.engine;
+  }
+
+  async getGameHistory(): Promise<GameHistoryData> {
+    return buildGameHistoryData(await this.store.persistence.listResults());
   }
 
   subscribe(gameId: string, connId: string, fn: (state: GameState) => void): () => void {
@@ -181,7 +202,10 @@ export class Registry {
 
   private async getRecord(gameId: string): Promise<GameRecord | undefined> {
     const cached = this.store.games.get(gameId);
-    if (cached) return cached;
+    if (cached) {
+      this.ensureDeckId(cached);
+      return cached;
+    }
 
     const existingLoad = this.store.loads.get(gameId);
     if (existingLoad) return existingLoad;
@@ -198,6 +222,9 @@ export class Registry {
     const existing = this.store.games.get(persisted.lobby.gameId);
     if (existing) return existing;
 
+    persisted.lobby.deckId ??= DEFAULT_DECK_ID;
+    if (persisted.state) persisted.state.deckId ??= persisted.lobby.deckId;
+
     const rec: GameRecord = {
       lobby: persisted.lobby,
       subscribers: new Map(),
@@ -213,13 +240,20 @@ export class Registry {
       this.wireEngine(rec);
     }
     this.cacheRecord(rec);
+    if (persisted.state?.status === "finished") this.queuePersist(rec, persisted.state);
     this.resumeEngine(rec);
     return rec;
   }
 
   private cacheRecord(rec: GameRecord): void {
+    this.ensureDeckId(rec);
     this.store.games.set(rec.lobby.gameId, rec);
     this.store.byCode.set(rec.lobby.joinCode, rec.lobby.gameId);
+  }
+
+  private ensureDeckId(rec: GameRecord): void {
+    rec.lobby.deckId ??= DEFAULT_DECK_ID;
+    if (rec.engine) rec.engine.state.deckId ??= rec.lobby.deckId;
   }
 
   private wireEngine(rec: GameRecord): void {
@@ -261,15 +295,38 @@ export class Registry {
       lobby: structuredClone(rec.lobby),
       state: state ? structuredClone(state) : null,
     };
+    const result = this.completedGameFor(snapshot);
     rec.persistChain = rec.persistChain.then(async () => {
       try {
         await this.store.persistence.save(snapshot);
+        if (result) await this.store.persistence.recordResult(result);
         rec.persistenceError = undefined;
       } catch (error) {
         rec.persistenceError = error;
         console.error(`Could not persist game ${rec.lobby.gameId}`, error);
       }
     });
+  }
+
+  private completedGameFor(game: PersistedGame): CompletedGame | null {
+    const state = game.state;
+    if (!state || state.status !== "finished" || !state.winnerId) return null;
+    if (state.players.some((player) => player.isBot)) return null;
+
+    const winner = state.players.find((player) => player.id === state.winnerId);
+    if (!winner) return null;
+
+    return {
+      gameId: state.gameId,
+      winnerName: winner.name,
+      players: state.players.map((player) => ({
+        name: player.name,
+        won: player.id === state.winnerId,
+      })),
+      turnCount: state.turnNumber,
+      startedAt: game.lobby.createdAt,
+      finishedAt: Date.now(),
+    };
   }
 }
 

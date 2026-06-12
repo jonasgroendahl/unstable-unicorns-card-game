@@ -33,6 +33,7 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
   const pct = Math.max(0, Math.min(1, remaining / REACTION_WINDOW_MS));
   const seconds = Math.ceil(Math.max(0, remaining) / 1000);
   const latestNeigh = reaction.chain.at(-1);
+  const isCounterNeigh = Boolean(latestNeigh);
   const wouldCancel = reaction.chain.length % 2 === 1;
 
   return (
@@ -52,7 +53,9 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Neigh window</Badge>
+              <Badge variant="secondary">
+                {isCounterNeigh ? "Counter-Neigh window" : "Neigh window"}
+              </Badge>
               <span className="truncate text-sm font-bold text-amber-100">
                 {reaction.targetCard?.name ?? "A card"} by {playerName(reaction.targetByPlayer)}
               </span>
@@ -111,8 +114,14 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
           <div className="uu-reaction-response rounded-xl bg-white/5 px-3 py-2">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <div className="text-xs font-bold text-amber-100">Your response</div>
-                <div className="text-[10px] text-white/45">Play a Neigh card or pass.</div>
+                <div className="text-xs font-bold text-amber-100">
+                  {isCounterNeigh ? "Counter the latest Neigh?" : "Your response"}
+                </div>
+                <div className="text-[10px] text-white/45">
+                  {latestNeigh
+                    ? `Play a Neigh on ${playerName(latestNeigh.byPlayer)}'s ${latestNeigh.card.name}, or pass.`
+                    : "Play a Neigh card or pass."}
+                </div>
               </div>
               <Button variant="secondary" size="sm" onClick={onPass}>
                 <Ban data-icon="inline-start" /> Pass
@@ -133,8 +142,11 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
           </div>
         ) : (
           <p className="flex items-center justify-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-sm text-white/60">
-            <Hand className="size-4" /> Waiting for another player to respond. You can inspect the
-            board meanwhile.
+            <Hand className="size-4" />{" "}
+            {isCounterNeigh
+              ? "Waiting for another player to counter the latest Neigh."
+              : "Waiting for another player to respond."}{" "}
+            You can inspect the board meanwhile.
           </p>
         )}
       </div>

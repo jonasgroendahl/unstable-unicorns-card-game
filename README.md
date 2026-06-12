@@ -88,10 +88,11 @@ Art is in `public/cards/<slug>.{jpg,png}`.
 
 ## Audio
 
-Sound effects are synthesized at runtime via the Web Audio API (no asset files).
-Background music is optional: drop an MP3/OGG at `public/audio/music.mp3` and it
-will loop automatically; absent that, the game is silent music‑wise. Volume and
-mute persist to `localStorage`.
+Sound effects and fallback background music are synthesized at runtime via the
+Web Audio API. To use custom music, drop an MP3/OGG at
+`public/audio/music.mp3`; Vite copies it to `.output/public/audio/music.mp3` for
+production and it will loop automatically. Volume and mute persist to
+`localStorage`.
 
 ## Scripts
 

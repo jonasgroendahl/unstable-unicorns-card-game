@@ -1,9 +1,21 @@
 // Effect hooks for Upgrade cards (beneficial cards attached to a Stable).
 
-import type { CardDefinition } from "../../types";
+import type { CardDefinition, EffectContext } from "../../types";
 import { hasBasicUnicornInStable, isUnicorn } from "../../derive";
 
 type Behavior = Partial<Pick<CardDefinition, "triggers" | "aura" | "canPlay" | "grantsExtraPlays">>;
+
+function targetableUnicorns(ctx: EffectContext) {
+  const targets: string[] = [];
+  for (const player of ctx.state.players) {
+    for (const id of ctx.state.stables[player.id] ?? []) {
+      if (isUnicorn(ctx.state, ctx.instance(id)) && ctx.isTargetable(id, "targeted")) {
+        targets.push(id);
+      }
+    }
+  }
+  return targets;
+}
 
 export const UPGRADE_EFFECTS: Record<string, Behavior> = {
   // Action-economy upgrades. The extra play/draw is applied at beginning of turn
@@ -19,6 +31,36 @@ export const UPGRADE_EFFECTS: Record<string, Behavior> = {
       beginningOfTurn: async (ctx, source) => {
         const draw = await ctx.yesNo(source.ownerId!, "Draw an extra card? (Extra Tail)");
         if (draw) await ctx.draw(source.ownerId!, 1);
+      },
+    },
+  },
+
+  "claw-machine": {
+    triggers: {
+      beginningOfTurn: async (ctx, source) => {
+        const owner = source.ownerId!;
+        if ((ctx.state.hands[owner] ?? []).length === 0) return;
+        const use = await ctx.yesNo(owner, "Claw Machine: discard a card to draw a card?");
+        if (!use) return;
+        const discarded = await ctx.discardChoice(owner, 1);
+        if (discarded.length === 1) await ctx.draw(owner, 1);
+      },
+    },
+  },
+
+  "caffeine-overload": {
+    triggers: {
+      beginningOfTurn: async (ctx, source) => {
+        const owner = source.ownerId!;
+        const mine = (ctx.state.stables[owner] ?? []).slice();
+        if (mine.length === 0) return;
+        const sacrifice = await ctx.chooseInstance(owner, mine, {
+          may: true,
+          prompt: "Caffeine Overload: sacrifice a card to draw 2 cards?",
+        });
+        if (!sacrifice) return;
+        await ctx.sacrifice(sacrifice);
+        if (ctx.instance(sacrifice).zone !== "stable") await ctx.draw(owner, 2);
       },
     },
   },
@@ -134,6 +176,49 @@ export const UPGRADE_EFFECTS: Record<string, Behavior> = {
             ctx.log(`returned ${ctx.def(id).name} to ${ctx.playerName(back)}`);
           }
         }
+      },
+    },
+  },
+
+  "rainbow-lasso": {
+    triggers: {
+      beginningOfTurn: async (ctx, source) => {
+        const owner = source.ownerId!;
+        const targets = targetableUnicorns(ctx).filter((id) => ctx.instance(id).ownerId !== owner);
+        if ((ctx.state.hands[owner] ?? []).length < 3 || targets.length === 0) return;
+        const use = await ctx.yesNo(owner, "Rainbow Lasso: discard 3 cards to steal a Unicorn?");
+        if (!use) return;
+        const discarded = await ctx.discardChoice(owner, 3);
+        if (discarded.length < 3) return;
+        const refreshed = targetableUnicorns(ctx).filter(
+          (id) => ctx.instance(id).ownerId !== owner,
+        );
+        const pick = await ctx.chooseInstance(owner, refreshed, {
+          prompt: "Steal which Unicorn?",
+        });
+        if (pick) await ctx.steal(pick, owner);
+      },
+    },
+  },
+
+  "stable-artillery": {
+    triggers: {
+      beginningOfTurn: async (ctx, source) => {
+        const owner = source.ownerId!;
+        if ((ctx.state.hands[owner] ?? []).length < 2 || targetableUnicorns(ctx).length === 0) {
+          return;
+        }
+        const use = await ctx.yesNo(
+          owner,
+          "Stable Artillery: discard 2 cards to destroy a Unicorn?",
+        );
+        if (!use) return;
+        const discarded = await ctx.discardChoice(owner, 2);
+        if (discarded.length < 2) return;
+        const pick = await ctx.chooseInstance(owner, targetableUnicorns(ctx), {
+          prompt: "Destroy which Unicorn?",
+        });
+        if (pick) await ctx.destroy(pick, { selection: "targeted", bySource: "upgrade" });
       },
     },
   },

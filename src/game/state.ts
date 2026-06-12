@@ -1,6 +1,6 @@
 // Game state construction and pure zone helpers.
 
-import { allDefinitions } from "./cards";
+import { definitionsForDeck, type DeckId } from "./decks";
 import { makeInstanceId } from "./ids";
 import { shuffle } from "./rng";
 import type { CardInstance, GamePlayer, GameState, InstanceId, PlayerId, Zone } from "./types";
@@ -18,10 +18,10 @@ export interface SeatConfig {
  * Build the full deck of card instances (every copy of every non-baby card) plus
  * the Nursery of Baby Unicorns. Babies are NOT shuffled into the deck.
  */
-function buildCards(): { deck: CardInstance[]; babies: CardInstance[] } {
+function buildCards(deckId: DeckId): { deck: CardInstance[]; babies: CardInstance[] } {
   const deck: CardInstance[] = [];
   const babies: CardInstance[] = [];
-  for (const def of allDefinitions()) {
+  for (const def of definitionsForDeck(deckId)) {
     for (let i = 0; i < def.copies; i++) {
       const inst: CardInstance = {
         instanceId: makeInstanceId(),
@@ -36,7 +36,12 @@ function buildCards(): { deck: CardInstance[]; babies: CardInstance[] } {
   return { deck, babies };
 }
 
-export function createInitialState(seats: SeatConfig[], seed: number, gameId: string): GameState {
+export function createInitialState(
+  seats: SeatConfig[],
+  seed: number,
+  gameId: string,
+  deckId: DeckId,
+): GameState {
   if (seats.length < 2 || seats.length > 8) {
     throw new Error(`Unstable Unicorns supports 2–8 players, got ${seats.length}`);
   }
@@ -48,7 +53,7 @@ export function createInitialState(seats: SeatConfig[], seed: number, gameId: st
     connected: true,
   }));
 
-  const { deck, babies } = buildCards();
+  const { deck, babies } = buildCards(deckId);
   const instances: Record<InstanceId, CardInstance> = {};
   for (const c of [...deck, ...babies]) instances[c.instanceId] = c;
 
@@ -65,6 +70,7 @@ export function createInitialState(seats: SeatConfig[], seed: number, gameId: st
 
   const state: GameState = {
     gameId,
+    deckId,
     rngSeed,
     players,
     instances,

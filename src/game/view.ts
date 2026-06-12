@@ -5,6 +5,7 @@
 import { getDefinition } from "./cards";
 import { handIsPublic, unicornCountFor, winThreshold } from "./derive";
 import type { GameState, InstanceId, PendingDecision, PlayerId, ReactionState } from "./types";
+import type { DeckId } from "./decks";
 
 export interface CardView {
   instanceId: InstanceId;
@@ -34,6 +35,7 @@ export interface PlayerView {
 
 export interface GameView {
   gameId: string;
+  deckId: DeckId;
   status: GameState["status"];
   phase: GameState["phase"];
   viewerId: PlayerId;
@@ -144,6 +146,7 @@ export function sanitizeFor(state: GameState, viewerId: PlayerId): GameView {
 
   return {
     gameId: state.gameId,
+    deckId: state.deckId,
     status: state.status,
     phase: state.phase,
     viewerId,

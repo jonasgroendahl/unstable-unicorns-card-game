@@ -1,10 +1,21 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Sparkles, Users, Plus, LogIn, Bug } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  Sparkles,
+  Users,
+  Plus,
+  LogIn,
+  Bug,
+  Trophy,
+  Github,
+  ExternalLink,
+  Mail,
+} from "lucide-react";
 import { Button } from "#/components/ui/button.tsx";
 import { audio } from "#/lib/audio.ts";
 import { createLobby, joinLobby } from "#/server/actions.ts";
 import { toast } from "sonner";
+import { DEFAULT_DECK_ID } from "#/game/decks.ts";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -18,9 +29,14 @@ function Home() {
 
   const host = async () => {
     audio.unlock();
+    const hostName = name.trim();
+    if (!hostName) {
+      toast.error("Enter your name to host a game.");
+      return;
+    }
     setBusy(true);
     try {
-      const res = await createLobby({ data: { hostName: playerName() } });
+      const res = await createLobby({ data: { hostName, deckId: DEFAULT_DECK_ID } });
       sessionStorage.setItem(`uu.you.${res.gameId}`, res.youId);
       await navigate({ to: "/lobby/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
@@ -70,6 +86,7 @@ function Home() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Player"
+              required
               maxLength={20}
               className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-amber-300"
             />
@@ -78,7 +95,7 @@ function Home() {
           <div className="grid grid-cols-2 gap-2">
             <Button
               onClick={host}
-              disabled={busy}
+              disabled={busy || !name.trim()}
               className="bg-amber-400 text-black hover:bg-amber-300"
             >
               <Plus className="size-4" /> Host game
@@ -110,7 +127,44 @@ function Home() {
         </div>
 
         <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-white/40">
-          <Users className="size-3.5" /> 2–8 players · base 1st-gen deck · 127 cards
+          <Users className="size-3.5" /> 2–8 players · choose your deck in the lobby
+        </p>
+        <Button className="mt-4" variant="ghost" asChild>
+          <Link to="/history">
+            <Trophy data-icon="inline-start" /> Leaderboard & history
+          </Link>
+        </Button>
+        <nav
+          aria-label="Developer and business links"
+          className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs"
+        >
+          <a
+            href="https://github.com/jonasgroendahl"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-white/50 transition-colors hover:text-amber-200"
+          >
+            <Github className="size-3.5" aria-hidden="true" /> jonasgroendahl
+          </a>
+          <a
+            href="mailto:jonas.groendahlxd@gmail.com"
+            className="inline-flex items-center gap-1.5 text-white/50 transition-colors hover:text-amber-200"
+          >
+            <Mail className="size-3.5" aria-hidden="true" /> Business inquiries:
+            jonas.groendahlxd@gmail.com
+          </a>
+        </nav>
+        <p className="mt-2 text-xs text-white/50">
+          Interested in other projects?{" "}
+          <a
+            href="https://byggegrundesiden.dk"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 transition-colors hover:text-amber-200"
+          >
+            Visit byggegrundesiden.dk
+            <ExternalLink className="size-3.5" aria-hidden="true" />
+          </a>
         </p>
       </div>
     </div>

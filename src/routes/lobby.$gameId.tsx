@@ -3,9 +3,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Bot, Copy, Crown, Play, User, X } from "lucide-react";
 import { Button } from "#/components/ui/button.tsx";
 import { toast } from "sonner";
-import { addBotToLobby, getLobby, removeSeat, startGame } from "#/server/actions.ts";
+import { addBotToLobby, getLobby, removeSeat, setLobbyDeck, startGame } from "#/server/actions.ts";
 import type { Lobby } from "#/server/registry.ts";
 import { useSessionSeatId } from "#/lib/useSessionSeatId.ts";
+import { DECKS } from "#/game/decks.ts";
+import { DeckPicker } from "#/components/game/DeckPicker.tsx";
 
 export const Route = createFileRoute("/lobby/$gameId")({ component: LobbyView });
 
@@ -66,6 +68,26 @@ function LobbyView() {
           </button>
         </div>
 
+        <div className="mb-5">
+          <DeckPicker
+            value={lobby.deckId}
+            onChange={
+              isHost
+                ? async (deckId) => {
+                    try {
+                      setLobby(await setLobbyDeck({ data: { gameId, playerId: youId, deckId } }));
+                    } catch (error) {
+                      toast.error((error as Error).message);
+                    }
+                  }
+                : undefined
+            }
+          />
+          {!isHost && (
+            <p className="mt-2 text-xs text-white/50">The host chooses the deck for this game.</p>
+          )}
+        </div>
+
         <div className="space-y-2">
           {lobby.seats.map((s) => (
             <div
@@ -94,7 +116,8 @@ function LobbyView() {
         </div>
 
         <p className="mt-3 text-xs text-white/50">
-          {lobby.seats.length}/8 players · win at {lobby.seats.length >= 6 ? 6 : 7} unicorns
+          {lobby.seats.length}/8 players · {DECKS[lobby.deckId].shortName} · win at{" "}
+          {lobby.seats.length >= 6 ? 6 : 7} unicorns
         </p>
 
         {isHost ? (

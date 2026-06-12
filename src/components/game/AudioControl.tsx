@@ -52,9 +52,10 @@ export function AudioControl({ className, compact }: { className?: string; compa
         max={1}
         step={0.05}
         value={prefs.sfxVolume}
-        onChange={(e) => audio.setSfxVolume(Number(e.target.value))}
-        className="h-1 w-16 accent-amber-400"
+        onChange={(e) => audio.setSfxVolume(Number(e.currentTarget.value))}
+        className="h-5 w-16 cursor-pointer touch-none accent-amber-400"
         title="Sound effects volume"
+        aria-label="Sound effects volume"
       />
       <Music className="size-3.5 text-white/50" />
       <input
@@ -64,11 +65,12 @@ export function AudioControl({ className, compact }: { className?: string; compa
         step={0.05}
         value={prefs.musicVolume}
         onChange={(e) => {
-          audio.setMusicVolume(Number(e.target.value));
+          audio.setMusicVolume(Number(e.currentTarget.value));
           audio.startMusic();
         }}
-        className="h-1 w-12 accent-fuchsia-400"
+        className="h-5 w-12 cursor-pointer touch-none accent-fuchsia-400"
         title="Music volume"
+        aria-label="Music volume"
       />
     </div>
   );

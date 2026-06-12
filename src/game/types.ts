@@ -5,6 +5,7 @@
 //   CardInstance   = a physical card in a game, with mutable zone/owner/runtime state.
 
 import type { CardKind } from "./cards/cardData";
+import type { DeckId } from "./decks";
 
 export type { CardKind };
 
@@ -192,6 +193,7 @@ export interface GamePlayer {
 
 export interface GameState {
   gameId: string;
+  deckId: DeckId;
   rngSeed: number; // advanced by every shuffle/random draw
   players: GamePlayer[]; // seating order
   instances: Record<InstanceId, CardInstance>;

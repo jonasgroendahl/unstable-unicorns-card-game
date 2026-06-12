@@ -59,8 +59,11 @@ function playTransitionSounds(prev: GameView | null, next: GameView, viewerId: P
         if (!played) audio.play("draw");
         break;
       case "neigh":
-      case "neighed":
         audio.play("neigh");
+        played = true;
+        break;
+      case "neighed":
+        audio.play("neighed");
         played = true;
         break;
     }

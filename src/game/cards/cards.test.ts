@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { allDefinitions, getDefinition, hasBehavior } from "./index";
 import { CARD_DATA } from "./cardData";
+import { DECK_IDS, definitionsForDeck } from "../decks";
 
 describe("card data integrity", () => {
-  it("has 84 distinct cards and 127 total copies", () => {
-    expect(CARD_DATA.length).toBe(84);
-    expect(CARD_DATA.reduce((n, c) => n + c.copies, 0)).toBe(127);
+  it("has a 127-card manifest for every supported deck", () => {
+    expect(CARD_DATA.length).toBe(93);
+    for (const deckId of DECK_IDS) {
+      const definitions = definitionsForDeck(deckId);
+      expect(definitions.length).toBe(84);
+      expect(definitions.reduce((total, definition) => total + definition.copies, 0)).toBe(127);
+    }
   });
 
   it("every card has a definition", () => {

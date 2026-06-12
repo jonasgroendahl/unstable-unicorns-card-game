@@ -1,0 +1,83 @@
+[
+  {
+    "name": "Dark Angel Unicorn",
+    "slug": "dark-angel-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, you may SACRIFICE a Unicorn card, then bring a Unicorn card from the discard pile into your Stable.",
+    "image": "/cards/dark-angel-unicorn.png",
+    "code": null
+  },
+  {
+    "name": "Mother Goose Unicorn",
+    "slug": "mother-goose-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, you may bring a Baby Unicorn card from the Nursery into your Stable.",
+    "image": "/cards/mother-goose-unicorn.png",
+    "code": null
+  },
+  {
+    "name": "Necromancer Unicorn",
+    "slug": "necromancer-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, you may DISCARD 2 Unicorn cards, then bring a Unicorn card from the discard pile into your Stable.",
+    "image": "/cards/necromancer-unicorn.png",
+    "code": null
+  },
+  {
+    "name": "Unicorn Oracle",
+    "slug": "unicorn-oracle",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, look at the top 3 cards of the deck and add one of them to your hand, then return the other two to the top of the deck in any order.",
+    "image": "/cards/unicorn-oracle.png",
+    "code": null
+  },
+  {
+    "name": "Kiss of Life",
+    "slug": "kiss-of-life",
+    "type": "Magic",
+    "copies": 1,
+    "text": "Bring a Unicorn card from the discard pile into your Stable.",
+    "image": "/cards/kiss-of-life.png",
+    "code": null
+  },
+  {
+    "name": "Caffeine Overload",
+    "slug": "caffeine-overload",
+    "type": "Upgrade",
+    "copies": 1,
+    "text": "If this card is in your Stable at the beginning of your turn, you may SACRIFICE a card, then DRAW 2 cards.",
+    "image": "/cards/caffeine-overload.png",
+    "code": null
+  },
+  {
+    "name": "Claw Machine",
+    "slug": "claw-machine",
+    "type": "Upgrade",
+    "copies": 3,
+    "text": "If this card is in your Stable at the beginning of your turn, you may DISCARD a card, then DRAW a card.",
+    "image": "/cards/claw-machine.png",
+    "code": null
+  },
+  {
+    "name": "Rainbow Lasso",
+    "slug": "rainbow-lasso",
+    "type": "Upgrade",
+    "copies": 1,
+    "text": "If this card is in your Stable at the beginning of your turn, you may DISCARD 3 cards, then STEAL a Unicorn card.",
+    "image": "/cards/rainbow-lasso.png",
+    "code": null
+  },
+  {
+    "name": "Stable Artillery",
+    "slug": "stable-artillery",
+    "type": "Upgrade",
+    "copies": 3,
+    "text": "If this card is in your Stable at the beginning of your turn, you may DISCARD 2 cards, then DESTROY a Unicorn card.",
+    "image": "/cards/stable-artillery.png",
+    "code": null
+  }
+]

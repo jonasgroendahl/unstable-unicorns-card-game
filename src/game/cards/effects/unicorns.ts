@@ -261,6 +261,18 @@ export const UNICORN_EFFECTS: Record<string, Behavior> = {
     },
   },
 
+  "mother-goose-unicorn": {
+    triggers: {
+      onEnterStable: async (ctx, source) => {
+        const pick = await ctx.chooseInstance(source.ownerId!, ctx.state.nursery.slice(), {
+          may: true,
+          prompt: "Bring a Baby Unicorn from the Nursery into your Stable?",
+        });
+        if (pick) await ctx.moveUnicornToStable(pick, source.ownerId!, { from: "nursery" });
+      },
+    },
+  },
+
   "mermaid-unicorn": {
     triggers: {
       onEnterStable: async (ctx, source) => {
@@ -286,6 +298,30 @@ export const UNICORN_EFFECTS: Record<string, Behavior> = {
         if ((ctx.state.hands[source.ownerId!] ?? []).length > 0) {
           await ctx.discardChoice(source.ownerId!, 1);
         }
+      },
+    },
+  },
+
+  "unicorn-oracle": {
+    triggers: {
+      onEnterStable: async (ctx, source) => {
+        const top = ctx.state.deck.slice(-3);
+        if (top.length === 0) return;
+        const take = await ctx.chooseInstance(source.ownerId!, top, {
+          prompt: "Choose one of the top cards to add to your hand.",
+        });
+        if (!take) return;
+        ctx.takeToHand(source.ownerId!, take);
+
+        const remaining = top.filter((id) => id !== take);
+        if (remaining.length < 2) return;
+        const onTop = await ctx.chooseInstance(source.ownerId!, remaining, {
+          prompt: "Choose which remaining card to put on top of the deck.",
+        });
+        if (!onTop) return;
+        const below = remaining.find((id) => id !== onTop)!;
+        ctx.state.deck = ctx.state.deck.filter((id) => id !== below && id !== onTop);
+        ctx.state.deck.push(below, onTop);
       },
     },
   },
@@ -372,6 +408,30 @@ export const UNICORN_EFFECTS: Record<string, Behavior> = {
     },
   },
 
+  "dark-angel-unicorn": {
+    triggers: {
+      onEnterStable: async (ctx, source) => {
+        const owner = source.ownerId!;
+        const mine = (ctx.state.stables[owner] ?? []).filter((id) =>
+          isUnicorn(ctx.state, ctx.instance(id)),
+        );
+        if (mine.length === 0) return;
+        const sacrifice = await ctx.chooseInstance(owner, mine, {
+          may: true,
+          prompt: "Sacrifice a Unicorn to bring one from the discard pile into your Stable?",
+        });
+        if (!sacrifice) return;
+        await ctx.sacrifice(sacrifice);
+        if (ctx.instance(sacrifice).zone === "stable") return;
+        const fromDiscard = discardFiltered(ctx, (d) => d.cardClass === "unicorn");
+        const bring = await ctx.chooseInstance(owner, fromDiscard, {
+          prompt: "Bring which Unicorn into your Stable?",
+        });
+        if (bring) await ctx.moveUnicornToStable(bring, owner, { from: "discard" });
+      },
+    },
+  },
+
   "extremely-fertile-unicorn": {
     triggers: {
       beginningOfTurn: async (ctx, source) => {
@@ -435,6 +495,29 @@ export const UNICORN_EFFECTS: Record<string, Behavior> = {
         });
         if (pick) await ctx.moveUnicornToStable(pick, owner, { from: "discard" });
         ctx.endTurnNow();
+      },
+    },
+  },
+
+  "necromancer-unicorn": {
+    triggers: {
+      onEnterStable: async (ctx, source) => {
+        const owner = source.ownerId!;
+        const unicornsInHand = (ctx.state.hands[owner] ?? []).filter(
+          (id) => ctx.def(id).cardClass === "unicorn",
+        );
+        if (unicornsInHand.length < 2) return;
+        const use = await ctx.yesNo(owner, "Discard 2 Unicorn cards to revive a Unicorn?");
+        if (!use) return;
+        const discarded = await ctx.discardChoice(owner, 2, {
+          filter: (card) => ctx.def(card.instanceId).cardClass === "unicorn",
+        });
+        if (discarded.length < 2) return;
+        const fromDiscard = discardFiltered(ctx, (d) => d.cardClass === "unicorn");
+        const bring = await ctx.chooseInstance(owner, fromDiscard, {
+          prompt: "Bring which Unicorn into your Stable?",
+        });
+        if (bring) await ctx.moveUnicornToStable(bring, owner, { from: "discard" });
       },
     },
   },

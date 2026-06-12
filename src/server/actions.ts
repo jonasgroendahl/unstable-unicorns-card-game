@@ -5,13 +5,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { registry } from "./registry";
 import { sanitizeFor } from "../game/view";
+import { DECK_IDS } from "../game/decks";
 
 // --- Lobby ----------------------------------------------------------------
 
 export const createLobby = createServerFn({ method: "POST" })
-  .validator(z.object({ hostName: z.string().min(1).max(20) }))
+  .validator(
+    z.object({
+      hostName: z.string().trim().min(1).max(20),
+      deckId: z.enum(DECK_IDS).default("base-first-edition"),
+    }),
+  )
   .handler(async ({ data }) => {
-    const lobby = await registry.createLobby(data.hostName);
+    const lobby = await registry.createLobby(data.hostName, data.deckId);
     return { gameId: lobby.gameId, joinCode: lobby.joinCode, youId: lobby.hostId };
   });
 
@@ -33,6 +39,10 @@ export const getLobby = createServerFn({ method: "GET" })
     return lobby;
   });
 
+export const getGameHistory = createServerFn({ method: "GET" }).handler(() =>
+  registry.getGameHistory(),
+);
+
 export const addBotToLobby = createServerFn({ method: "POST" })
   .validator(z.object({ gameId: z.string() }))
   .handler(async ({ data }) => {
@@ -45,6 +55,14 @@ export const removeSeat = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await registry.removeSeat(data.gameId, data.seatId);
     return registry.getLobby(data.gameId);
+  });
+
+export const setLobbyDeck = createServerFn({ method: "POST" })
+  .validator(z.object({ gameId: z.string(), playerId: z.string(), deckId: z.enum(DECK_IDS) }))
+  .handler(async ({ data }) => {
+    const lobby = await registry.setLobbyDeck(data.gameId, data.playerId, data.deckId);
+    if (!lobby) throw new Error("Only the host can change the deck before the game starts.");
+    return lobby;
   });
 
 export const startGame = createServerFn({ method: "POST" })

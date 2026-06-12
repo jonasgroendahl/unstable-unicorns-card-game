@@ -17,3 +17,15 @@ model GameSession {
   @@index([updatedAt(sort: Desc)], map: "game_sessions_updated_at_idx")
   @@map("game_sessions")
 }
+
+model GameResult {
+  gameId     String   @id @map("game_id")
+  winnerName String   @map("winner_name")
+  players    Json
+  turnCount  Int      @map("turn_count")
+  startedAt  DateTime @map("started_at") @db.Timestamptz(6)
+  finishedAt DateTime @default(now()) @map("finished_at") @db.Timestamptz(6)
+
+  @@index([finishedAt(sort: Desc)], map: "game_results_finished_at_idx")
+  @@map("game_results")
+}

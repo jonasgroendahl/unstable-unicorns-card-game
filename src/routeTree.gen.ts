@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as DebugRouteImport } from './routes/debug'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlayGameIdRouteImport } from './routes/play.$gameId'
 import { Route as LobbyGameIdRouteImport } from './routes/lobby.$gameId'
 import { Route as ApiStreamGameIdRouteImport } from './routes/api/stream.$gameId'
 
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DebugRoute = DebugRouteImport.update({
   id: '/debug',
   path: '/debug',
@@ -44,6 +50,7 @@ const ApiStreamGameIdRoute = ApiStreamGameIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/debug': typeof DebugRoute
+  '/history': typeof HistoryRoute
   '/lobby/$gameId': typeof LobbyGameIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
   '/api/stream/$gameId': typeof ApiStreamGameIdRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/debug': typeof DebugRoute
+  '/history': typeof HistoryRoute
   '/lobby/$gameId': typeof LobbyGameIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
   '/api/stream/$gameId': typeof ApiStreamGameIdRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/debug': typeof DebugRoute
+  '/history': typeof HistoryRoute
   '/lobby/$gameId': typeof LobbyGameIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
   '/api/stream/$gameId': typeof ApiStreamGameIdRoute
@@ -68,6 +77,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/debug'
+    | '/history'
     | '/lobby/$gameId'
     | '/play/$gameId'
     | '/api/stream/$gameId'
@@ -75,6 +85,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/debug'
+    | '/history'
     | '/lobby/$gameId'
     | '/play/$gameId'
     | '/api/stream/$gameId'
@@ -82,6 +93,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/debug'
+    | '/history'
     | '/lobby/$gameId'
     | '/play/$gameId'
     | '/api/stream/$gameId'
@@ -90,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DebugRoute: typeof DebugRoute
+  HistoryRoute: typeof HistoryRoute
   LobbyGameIdRoute: typeof LobbyGameIdRoute
   PlayGameIdRoute: typeof PlayGameIdRoute
   ApiStreamGameIdRoute: typeof ApiStreamGameIdRoute
@@ -97,6 +110,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/debug': {
       id: '/debug'
       path: '/debug'
@@ -138,6 +158,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DebugRoute: DebugRoute,
+  HistoryRoute: HistoryRoute,
   LobbyGameIdRoute: LobbyGameIdRoute,
   PlayGameIdRoute: PlayGameIdRoute,
   ApiStreamGameIdRoute: ApiStreamGameIdRoute,

@@ -2,6 +2,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import type { GameState } from "../game/types";
 import { getPrisma } from "./prisma";
 import type { Lobby } from "./registry";
+import type { CompletedGame, CompletedGamePlayer } from "./gameHistory";
 
 export interface PersistedGame {
   lobby: Lobby;
@@ -13,6 +14,8 @@ export interface GamePersistence {
   save(game: PersistedGame): Promise<void>;
   findByGameId(gameId: string): Promise<PersistedGame | undefined>;
   findByJoinCode(joinCode: string): Promise<PersistedGame | undefined>;
+  recordResult(result: CompletedGame): Promise<void>;
+  listResults(): Promise<CompletedGame[]>;
 }
 
 function cloneGame(game: PersistedGame): PersistedGame {
@@ -23,6 +26,7 @@ function cloneGame(game: PersistedGame): PersistedGame {
 export class MemoryGamePersistence implements GamePersistence {
   private games = new Map<string, PersistedGame>();
   private byCode = new Map<string, string>();
+  private results = new Map<string, CompletedGame>();
 
   async create(game: PersistedGame): Promise<boolean> {
     if (this.games.has(game.lobby.gameId) || this.byCode.has(game.lobby.joinCode)) return false;
@@ -48,6 +52,16 @@ export class MemoryGamePersistence implements GamePersistence {
   async findByJoinCode(joinCode: string): Promise<PersistedGame | undefined> {
     const gameId = this.byCode.get(joinCode.toUpperCase());
     return gameId ? this.findByGameId(gameId) : undefined;
+  }
+
+  async recordResult(result: CompletedGame): Promise<void> {
+    if (!this.results.has(result.gameId)) this.results.set(result.gameId, structuredClone(result));
+  }
+
+  async listResults(): Promise<CompletedGame[]> {
+    return Array.from(this.results.values())
+      .sort((a, b) => b.finishedAt - a.finishedAt)
+      .map((result) => structuredClone(result));
   }
 }
 
@@ -97,6 +111,36 @@ export class PrismaGamePersistence implements GamePersistence {
       where: { joinCode: joinCode.toUpperCase() },
     });
     return game ? this.fromRow(game) : undefined;
+  }
+
+  async recordResult(result: CompletedGame): Promise<void> {
+    try {
+      await this.prisma.gameResult.create({
+        data: {
+          gameId: result.gameId,
+          winnerName: result.winnerName,
+          players: result.players as unknown as Prisma.InputJsonValue,
+          turnCount: result.turnCount,
+          startedAt: new Date(result.startedAt),
+          finishedAt: new Date(result.finishedAt),
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return;
+      throw error;
+    }
+  }
+
+  async listResults(): Promise<CompletedGame[]> {
+    const results = await this.prisma.gameResult.findMany({ orderBy: { finishedAt: "desc" } });
+    return results.map((result) => ({
+      gameId: result.gameId,
+      winnerName: result.winnerName,
+      players: result.players as unknown as CompletedGamePlayer[],
+      turnCount: result.turnCount,
+      startedAt: result.startedAt.getTime(),
+      finishedAt: result.finishedAt.getTime(),
+    }));
   }
 
   private fromRow(row: {

@@ -31,6 +31,17 @@ function allInStables(ctx: EffectContext, filter: (c: CardInstance) => boolean) 
 }
 
 export const MAGIC_EFFECTS: Record<string, Behavior> = {
+  "kiss-of-life": {
+    canPlay: (ctx) => ctx.state.discard.some((id) => ctx.def(id).cardClass === "unicorn"),
+    play: async (ctx) => {
+      const unicorns = ctx.state.discard.filter((id) => ctx.def(id).cardClass === "unicorn");
+      const pick = await ctx.chooseInstance(ctx.activePlayerId, unicorns, {
+        prompt: "Bring which Unicorn into your Stable?",
+      });
+      if (pick) await ctx.moveUnicornToStable(pick, ctx.activePlayerId, { from: "discard" });
+    },
+  },
+
   "unicorn-poison": {
     canPlay: (ctx) => targetableUnicorns(ctx).length > 0,
     play: async (ctx) => {

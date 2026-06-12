@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Crown, Home, RotateCcw } from "lucide-react";
+import { Crown, Home, RotateCcw, Trophy } from "lucide-react";
 import { Button } from "#/components/ui/button.tsx";
 
 export function WinScreen({ winnerName, youWon }: { winnerName: string; youWon: boolean }) {
@@ -23,6 +23,11 @@ export function WinScreen({ winnerName, youWon }: { winnerName: string; youWon: 
           </Button>
           <Button variant="secondary" onClick={() => window.location.reload()}>
             <RotateCcw className="size-4" /> Play again
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/history">
+              <Trophy data-icon="inline-start" /> History
+            </Link>
           </Button>
         </div>
       </div>
