@@ -65,6 +65,7 @@ export class GameEngine {
 
   constructor(state: GameState) {
     this.state = state;
+    this.logSeq = state.log.reduce((highest, event) => Math.max(highest, event.t), 0);
   }
 
   // --- pub/sub -------------------------------------------------------------

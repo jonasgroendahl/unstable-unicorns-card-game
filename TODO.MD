@@ -1,4 +1,4 @@
 - [x] Hover over to see card in a zoomed view
-- Add DB
+- [x] Add DB
 - [x] Game log with a max height and scrollable, placed in a better spot
 - [] Improve the UI for the neigh window. When a card is played, people will usually need some time to address things like what's in people's stables and how many cards do the person have in their hand etc. Currently that is not possible due to the modal-like view that appears. Also increase timer to 20 seconds. If a person neights, it should be very clear who is playing the neight card. Here i'm imagining a small little scene/animation where a card is turned around and the neight then displays together with the player name

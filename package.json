@@ -10,10 +10,12 @@
     "generate-routes": "tsr generate",
     "gen-cards": "node scripts/gen-card-data.mjs",
     "build": "vp build",
+    "db:generate": "prisma generate",
+    "db:migrate": "node --env-file-if-exists=.env.local node_modules/prisma/build/index.js migrate deploy",
     "start": "srvx serve --prod --dir=. --entry=.nitro/vite/services/ssr/server.js --static=.output/public",
     "preview": "vp preview",
     "test": "vp test run --config vitest.config.ts",
-    "prepare": "vp config"
+    "prepare": "vp config && prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",

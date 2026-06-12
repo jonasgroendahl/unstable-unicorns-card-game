@@ -8,11 +8,12 @@ import { sanitizeFor } from "../../game/view";
 export const Route = createFileRoute("/api/stream/$gameId")({
   server: {
     handlers: {
-      GET: ({ request, params }) => {
+      GET: async ({ request, params }) => {
         const url = new URL(request.url);
         const playerId = url.searchParams.get("playerId") ?? "";
         const gameId = params.gameId;
         const connId = `${playerId}_${Math.random().toString(36).slice(2)}`;
+        const engine = await registry.getEngine(gameId);
 
         const encoder = new TextEncoder();
         let unsub = () => {};
@@ -28,7 +29,6 @@ export const Route = createFileRoute("/api/stream/$gameId")({
             };
 
             const pushState = () => {
-              const engine = registry.getEngine(gameId);
               if (engine) send({ type: "state", view: sanitizeFor(engine.state, playerId) });
             };
 

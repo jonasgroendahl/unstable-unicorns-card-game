@@ -30,16 +30,17 @@ pnpm dev          # http://localhost:3000
   victory and are immune to _targeted_ unicorn effects), Blinding Light, Queen Bee, Rainbow Aura, Tiny Stable,
   Barbed Wire, Black Knight & Phoenix replacement effects, Unicorn Lasso borrow/
   return, Puppicorn relocation, Change of Luck extra turns, and more.
-- **Realtime multiplayer** — authoritative in‑memory engine on the server, SSE
-  push of per‑player sanitized state, commands via server functions. Bots play
-  themselves server‑side.
+- **Realtime multiplayer** — authoritative live engine on the server, SSE push
+  of per-player sanitized state, commands via server functions, and durable
+  settled snapshots in Postgres. Bots play themselves server-side.
 
 ## Architecture
 
 ```
-Browser (React) ──command (server fn)──▶ GameEngine (in‑memory, authoritative)
-       ▲                                          │
-       └────── SSE per‑player sanitized state ◀───┘
+Browser (React) ──command (server fn)──▶ GameEngine (live, authoritative)
+       ▲                                      │             │
+       └────── SSE sanitized state ◀──────────┘             ▼
+                                               Neon Postgres snapshots
 ```
 
 - `src/game/` — the pure, framework‑free rules engine (unit‑tested).
@@ -56,8 +57,23 @@ Browser (React) ──command (server fn)──▶ GameEngine (in‑memory, auth
 - `src/components/game/` — the board UI; `src/lib/gameClient.ts` abstracts local
   (in‑process) vs. remote (SSE) play behind one interface.
 
-State is in‑memory, so the app needs a single long‑lived Node process (the dev
-server and a standard `node .output/server/index.mjs` deploy both qualify).
+Live engines and SSE subscribers are process-local, so run one active app
+instance. Lobby data and settled game snapshots are stored in Postgres and
+hydrated after a restart. If the process restarts during a card choice or Neigh
+window, that in-flight command rolls back to the last settled snapshot.
+
+## Database
+
+Neon Postgres is accessed through Prisma ORM with the Postgres driver adapter.
+Copy a Neon connection string into `DATABASE_URL`, then apply the schema:
+
+```bash
+cp .env.example .env.local
+vp run db:migrate
+```
+
+Without `DATABASE_URL`, development and tests fall back to process memory and
+print a warning. Never expose `DATABASE_URL` through a `VITE_` variable.
 
 ## Card data
 
@@ -84,8 +100,11 @@ pnpm dev        # dev server
 pnpm build      # production build (Nitro server output in .output/)
 pnpm test       # engine unit tests (vitest, deterministic via seeded RNG)
 pnpm gen-cards  # regenerate src/game/cards/cardData.ts from research JSON
+vp run db:migrate # apply the Postgres schema
+vp run db:generate # regenerate Prisma Client after schema changes
 ```
 
 ## Tech
 
-TanStack Start + Router · Nitro · React 19 · Tailwind v4 · shadcn/ui · Vitest.
+TanStack Start + Router · Nitro · React 19 · Tailwind v4 · shadcn/ui · Prisma ·
+Neon Postgres · Vitest.

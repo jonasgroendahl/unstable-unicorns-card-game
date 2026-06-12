@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { GameBoard } from "#/components/game/GameBoard.tsx";
 import { RemoteGameClient } from "#/lib/gameClient.ts";
 import { useGameView } from "#/lib/useGameView.ts";
+import { useSessionSeatId } from "#/lib/useSessionSeatId.ts";
 import { audio } from "#/lib/audio.ts";
 import { Button } from "#/components/ui/button.tsx";
 
@@ -11,8 +12,7 @@ export const Route = createFileRoute("/play/$gameId")({ component: PlayGame });
 function PlayGame() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
-  const youId =
-    typeof sessionStorage !== "undefined" ? sessionStorage.getItem(`uu.you.${gameId}`) : null;
+  const youId = useSessionSeatId(gameId);
 
   const clientRef = useRef<RemoteGameClient | null>(null);
   if (!clientRef.current && youId) clientRef.current = new RemoteGameClient(gameId);
@@ -25,19 +25,19 @@ function PlayGame() {
 
   const view = useGameView(client, youId ?? "");
 
-  if (!youId) {
+  if (youId === undefined || !view || !client) {
     return (
-      <div className="uu-root uu-starfield flex min-h-dvh flex-col items-center justify-center gap-4">
-        <p className="text-white/70">You're not seated in this game.</p>
-        <Button onClick={() => navigate({ to: "/" })}>Back home</Button>
+      <div className="uu-root uu-starfield flex min-h-dvh items-center justify-center">
+        <p className="text-white/60">Connecting to game…</p>
       </div>
     );
   }
 
-  if (!view || !client) {
+  if (youId === null) {
     return (
-      <div className="uu-root uu-starfield flex min-h-dvh items-center justify-center">
-        <p className="text-white/60">Connecting to game…</p>
+      <div className="uu-root uu-starfield flex min-h-dvh flex-col items-center justify-center gap-4">
+        <p className="text-white/70">You're not seated in this game.</p>
+        <Button onClick={() => navigate({ to: "/" })}>Back home</Button>
       </div>
     );
   }

@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model GameSession {
+  gameId    String   @id @map("game_id")
+  joinCode  String   @unique @map("join_code") @db.VarChar(8)
+  lobby     Json
+  gameState Json?    @map("game_state")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([updatedAt(sort: Desc)], map: "game_sessions_updated_at_idx")
+  @@map("game_sessions")
+}

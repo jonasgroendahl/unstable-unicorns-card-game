@@ -1,17 +1,17 @@
-// Process-global in-memory store of lobbies and live game engines.
+// Process-local live game engines backed by durable, settled snapshots.
 //
-// This requires a single long-lived Node process (the Nitro dev server and a
-// standard node deploy both satisfy this). Games are lost on restart — acceptable
-// for this build per the plan.
+// The engine and SSE subscribers stay in memory. Lobby metadata and snapshots
+// with no live decision/reaction promise are persisted so games survive restarts.
 
-import { GameEngine } from "../game/engine/GameEngine";
-import { createGame } from "../game/index";
 import { runBots } from "../game/ai/bot";
+import { GameEngine } from "../game/engine/GameEngine";
 import { makeGameId, makeJoinCode } from "../game/ids";
+import { createGame } from "../game/index";
 import type { GameState } from "../game/types";
+import { createGamePersistence, type GamePersistence, type PersistedGame } from "./persistence";
 
 export interface LobbySeat {
-  id: string; // player id
+  id: string;
   name: string;
   isBot: boolean;
   connected: boolean;
@@ -31,53 +31,70 @@ interface GameRecord {
   engine?: GameEngine;
   /** SSE subscribers, keyed by a connection id. */
   subscribers: Map<string, (state: GameState) => void>;
+  persistChain: Promise<void>;
+  persistenceError?: unknown;
 }
 
-interface RegistryStore {
+export interface RegistryStore {
   games: Map<string, GameRecord>;
   byCode: Map<string, string>;
+  loads: Map<string, Promise<GameRecord | undefined>>;
+  persistence: GamePersistence;
 }
 
-class Registry {
-  private games: Map<string, GameRecord>;
-  private byCode: Map<string, string>;
+export function createRegistryStore(persistence = createGamePersistence()): RegistryStore {
+  return {
+    games: new Map(),
+    byCode: new Map(),
+    loads: new Map(),
+    persistence,
+  };
+}
 
-  constructor(store: RegistryStore) {
-    this.games = store.games;
-    this.byCode = store.byCode;
+export class Registry {
+  constructor(private store: RegistryStore) {}
+
+  async createLobby(hostName: string): Promise<Lobby> {
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const gameId = makeGameId();
+      const joinCode = makeJoinCode();
+      if (this.store.byCode.has(joinCode)) continue;
+
+      const hostId = `p_${gameId}_0`;
+      const lobby: Lobby = {
+        gameId,
+        joinCode,
+        hostId,
+        seats: [{ id: hostId, name: hostName || "Host", isBot: false, connected: true }],
+        status: "lobby",
+        createdAt: Date.now(),
+      };
+      const created = await this.store.persistence.create({ lobby, state: null });
+      if (!created) continue;
+
+      this.cacheRecord({ lobby, subscribers: new Map(), persistChain: Promise.resolve() });
+      return lobby;
+    }
+    throw new Error("Could not allocate a unique game id and join code.");
   }
 
-  createLobby(hostName: string): Lobby {
-    const gameId = makeGameId();
-    let joinCode = makeJoinCode();
-    while (this.byCode.has(joinCode)) joinCode = makeJoinCode();
-    const hostId = `p_${gameId}_0`;
-    const lobby: Lobby = {
-      gameId,
-      joinCode,
-      hostId,
-      seats: [{ id: hostId, name: hostName || "Host", isBot: false, connected: true }],
-      status: "lobby",
-      createdAt: Date.now(),
-    };
-    this.games.set(gameId, { lobby, subscribers: new Map() });
-    this.byCode.set(joinCode, gameId);
-    return lobby;
+  async getLobby(gameId: string): Promise<Lobby | undefined> {
+    return (await this.getRecord(gameId))?.lobby;
   }
 
-  getLobby(gameId: string): Lobby | undefined {
-    return this.games.get(gameId)?.lobby;
+  async getByCode(code: string): Promise<Lobby | undefined> {
+    const normalized = code.toUpperCase();
+    const cachedId = this.store.byCode.get(normalized);
+    if (cachedId) return this.getLobby(cachedId);
+
+    const persisted = await this.store.persistence.findByJoinCode(normalized);
+    return persisted ? this.hydrate(persisted).lobby : undefined;
   }
 
-  getByCode(code: string): Lobby | undefined {
-    const id = this.byCode.get(code.toUpperCase());
-    return id ? this.getLobby(id) : undefined;
-  }
+  async joinLobby(gameId: string, name: string): Promise<LobbySeat | undefined> {
+    const rec = await this.getRecord(gameId);
+    if (!rec || rec.lobby.status !== "lobby" || rec.lobby.seats.length >= 8) return undefined;
 
-  joinLobby(gameId: string, name: string): LobbySeat | undefined {
-    const rec = this.games.get(gameId);
-    if (!rec || rec.lobby.status !== "lobby") return undefined;
-    if (rec.lobby.seats.length >= 8) return undefined;
     const seat: LobbySeat = {
       id: `p_${gameId}_${rec.lobby.seats.length}`,
       name: name || `Player ${rec.lobby.seats.length + 1}`,
@@ -85,13 +102,14 @@ class Registry {
       connected: true,
     };
     rec.lobby.seats.push(seat);
-    this.broadcastLobby(gameId);
+    await this.persistAndFlush(rec);
     return seat;
   }
 
-  addBot(gameId: string): LobbySeat | undefined {
-    const rec = this.games.get(gameId);
+  async addBot(gameId: string): Promise<LobbySeat | undefined> {
+    const rec = await this.getRecord(gameId);
     if (!rec || rec.lobby.status !== "lobby" || rec.lobby.seats.length >= 8) return undefined;
+
     const botNum = rec.lobby.seats.filter((s) => s.isBot).length + 1;
     const seat: LobbySeat = {
       id: `p_${gameId}_${rec.lobby.seats.length}`,
@@ -100,72 +118,164 @@ class Registry {
       connected: true,
     };
     rec.lobby.seats.push(seat);
-    this.broadcastLobby(gameId);
+    await this.persistAndFlush(rec);
     return seat;
   }
 
-  removeSeat(gameId: string, seatId: string) {
-    const rec = this.games.get(gameId);
+  async removeSeat(gameId: string, seatId: string): Promise<void> {
+    const rec = await this.getRecord(gameId);
     if (!rec || rec.lobby.status !== "lobby") return;
+
     rec.lobby.seats = rec.lobby.seats.filter((s) => s.id !== seatId);
-    this.broadcastLobby(gameId);
+    await this.persistAndFlush(rec);
   }
 
-  startGame(gameId: string): boolean {
-    const rec = this.games.get(gameId);
-    if (!rec || rec.lobby.status !== "lobby") return false;
-    if (rec.lobby.seats.length < 2) return false;
+  async startGame(gameId: string): Promise<boolean> {
+    const rec = await this.getRecord(gameId);
+    if (!rec || rec.lobby.status !== "lobby" || rec.lobby.seats.length < 2) return false;
+
     rec.engine = createGame({
       gameId,
       seats: rec.lobby.seats.map((s) => ({ id: s.id, name: s.name, isBot: s.isBot })),
     });
     rec.lobby.status = "active";
-    // Re-broadcast game state to SSE subscribers on every engine change.
-    rec.engine.subscribe((state) => {
-      for (const fn of rec.subscribers.values()) fn(state);
-      if (state.status === "finished") rec.lobby.status = "finished";
-    });
-    // Push an initial frame.
+    this.wireEngine(rec);
+    this.queuePersist(rec, rec.engine.state);
+    await this.flush(gameId);
+
     for (const fn of rec.subscribers.values()) fn(rec.engine.state);
     return true;
   }
 
-  getEngine(gameId: string): GameEngine | undefined {
-    return this.games.get(gameId)?.engine;
+  async getEngine(gameId: string): Promise<GameEngine | undefined> {
+    return (await this.getRecord(gameId))?.engine;
   }
 
   subscribe(gameId: string, connId: string, fn: (state: GameState) => void): () => void {
-    const rec = this.games.get(gameId);
+    const rec = this.store.games.get(gameId);
     if (!rec) return () => {};
+
     rec.subscribers.set(connId, fn);
     return () => {
       rec.subscribers.delete(connId);
     };
   }
 
-  /** Re-emit current engine state (used right after a subscribe). */
-  pushCurrent(gameId: string) {
-    const rec = this.games.get(gameId);
-    if (rec?.engine) for (const fn of rec.subscribers.values()) fn(rec.engine.state);
+  async flush(gameId: string): Promise<void> {
+    const rec = this.store.games.get(gameId);
+    if (!rec) return;
+
+    await rec.persistChain;
+    if (rec.persistenceError) {
+      const error = rec.persistenceError;
+      rec.persistenceError = undefined;
+      throw error;
+    }
   }
 
-  private broadcastLobby(_gameId: string) {
-    // Lobby updates are polled by clients via getLobby; SSE only carries game state.
-  }
-
-  /** Nudge bots (called after a human action that may unblock a bot). */
-  nudgeBots(gameId: string) {
-    const engine = this.getEngine(gameId);
+  /** Nudge bots after a human action that may unblock one. */
+  async nudgeBots(gameId: string): Promise<void> {
+    const engine = await this.getEngine(gameId);
     if (engine) runBots(engine);
+  }
+
+  private async getRecord(gameId: string): Promise<GameRecord | undefined> {
+    const cached = this.store.games.get(gameId);
+    if (cached) return cached;
+
+    const existingLoad = this.store.loads.get(gameId);
+    if (existingLoad) return existingLoad;
+
+    const load = this.store.persistence
+      .findByGameId(gameId)
+      .then((persisted) => (persisted ? this.hydrate(persisted) : undefined))
+      .finally(() => this.store.loads.delete(gameId));
+    this.store.loads.set(gameId, load);
+    return load;
+  }
+
+  private hydrate(persisted: PersistedGame): GameRecord {
+    const existing = this.store.games.get(persisted.lobby.gameId);
+    if (existing) return existing;
+
+    const rec: GameRecord = {
+      lobby: persisted.lobby,
+      subscribers: new Map(),
+      persistChain: Promise.resolve(),
+    };
+    if (persisted.state) {
+      // Only settled snapshots are written, so no unresolved promise-backed
+      // decision or reaction should be present after hydration.
+      persisted.state.pendingDecisions = [];
+      persisted.state.reaction = null;
+      rec.engine = new GameEngine(persisted.state);
+      rec.engine.onBotTurn = () => runBots(rec.engine!);
+      this.wireEngine(rec);
+    }
+    this.cacheRecord(rec);
+    this.resumeEngine(rec);
+    return rec;
+  }
+
+  private cacheRecord(rec: GameRecord): void {
+    this.store.games.set(rec.lobby.gameId, rec);
+    this.store.byCode.set(rec.lobby.joinCode, rec.lobby.gameId);
+  }
+
+  private wireEngine(rec: GameRecord): void {
+    rec.engine?.subscribe((state) => {
+      for (const fn of rec.subscribers.values()) fn(state);
+      if (state.status === "finished") rec.lobby.status = "finished";
+      if (this.isSettled(state)) this.queuePersist(rec, state);
+    });
+  }
+
+  private resumeEngine(rec: GameRecord): void {
+    const engine = rec.engine;
+    if (!engine || engine.state.status !== "active") return;
+
+    // Beginning/end are transient phases that had just broadcast before their
+    // async work. Re-enter them; action phase is already ready for commands.
+    if (engine.state.phase === "beginning" || engine.state.phase === "draw") {
+      void engine.startTurn().catch((error) => console.error("Could not resume game turn", error));
+    } else if (engine.state.phase === "end") {
+      void engine
+        .endTurn(engine.currentPlayerId())
+        .catch((error) => console.error("Could not resume game end phase", error));
+    } else {
+      runBots(engine);
+    }
+  }
+
+  private isSettled(state: GameState): boolean {
+    return state.pendingDecisions.length === 0 && state.reaction === null;
+  }
+
+  private async persistAndFlush(rec: GameRecord): Promise<void> {
+    this.queuePersist(rec, rec.engine?.state ?? null);
+    await this.flush(rec.lobby.gameId);
+  }
+
+  private queuePersist(rec: GameRecord, state: GameState | null): void {
+    const snapshot: PersistedGame = {
+      lobby: structuredClone(rec.lobby),
+      state: state ? structuredClone(state) : null,
+    };
+    rec.persistChain = rec.persistChain.then(async () => {
+      try {
+        await this.store.persistence.save(snapshot);
+        rec.persistenceError = undefined;
+      } catch (error) {
+        rec.persistenceError = error;
+        console.error(`Could not persist game ${rec.lobby.gameId}`, error);
+      }
+    });
   }
 }
 
-// Persist game data across HMR, while recreating the Registry so its methods and
-// imported engine factory always use the latest server code.
+// Preserve cached engines and fallback memory persistence across HMR while
+// recreating Registry methods from the latest server code.
 const g = globalThis as unknown as { __uuRegistryStore?: RegistryStore };
-const store: RegistryStore = g.__uuRegistryStore ?? {
-  games: new Map(),
-  byCode: new Map(),
-};
+const store = g.__uuRegistryStore ?? createRegistryStore();
 g.__uuRegistryStore = store;
 export const registry = new Registry(store);

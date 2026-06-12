@@ -5,6 +5,7 @@ import { Button } from "#/components/ui/button.tsx";
 import { toast } from "sonner";
 import { addBotToLobby, getLobby, removeSeat, startGame } from "#/server/actions.ts";
 import type { Lobby } from "#/server/registry.ts";
+import { useSessionSeatId } from "#/lib/useSessionSeatId.ts";
 
 export const Route = createFileRoute("/lobby/$gameId")({ component: LobbyView });
 
@@ -12,8 +13,7 @@ function LobbyView() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
   const [lobby, setLobby] = useState<Lobby | null>(null);
-  const youId =
-    typeof sessionStorage !== "undefined" ? sessionStorage.getItem(`uu.you.${gameId}`) : null;
+  const youId = useSessionSeatId(gameId);
 
   // Poll the lobby until the game starts, then go to the board.
   useEffect(() => {
@@ -38,7 +38,7 @@ function LobbyView() {
     };
   }, [gameId, navigate]);
 
-  if (!lobby) {
+  if (!lobby || youId === undefined) {
     return (
       <div className="uu-root uu-starfield flex min-h-dvh items-center justify-center">
         <p className="text-white/60">Loading lobby…</p>
