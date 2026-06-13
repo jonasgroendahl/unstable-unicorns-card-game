@@ -90,7 +90,7 @@ export function runBots(engine: GameEngine): void {
   // 3. Bot's action phase?
   const current = state.players[state.turnIndex];
   if (current?.isBot && state.phase === "action" && state.actionsRemaining.plays > 0) {
-    takeBotAction(engine, current.id);
+    void takeBotAction(engine, current.id).catch(() => {});
   }
 }
 
@@ -101,7 +101,7 @@ function shouldNeigh(state: GameState, _botId: PlayerId): boolean {
   return n === 0;
 }
 
-function takeBotAction(engine: GameEngine, botId: PlayerId): void {
+async function takeBotAction(engine: GameEngine, botId: PlayerId): Promise<void> {
   const state = engine.state;
   const hand = state.hands[botId] ?? [];
 
@@ -112,15 +112,23 @@ function takeBotAction(engine: GameEngine, botId: PlayerId): void {
     .filter((c) => c.def.cardClass !== "instant")
     .sort((a, b) => order.indexOf(a.def.kind) - order.indexOf(b.def.kind));
 
+  // Try candidates in priority order. The engine validates legality (canPlay,
+  // no-legal-target, etc.) and rejects illegal plays *before* it broadcasts —
+  // so we must await each attempt and fall through to the next on failure.
+  // Bailing after the first card (without awaiting) would deadlock the bot's
+  // turn whenever its top-priority card has no legal target.
   for (const c of playable) {
-    // Check canPlay legality cheaply by attempting; the engine validates.
-    void engine.playCard(botId, c.id).catch(() => {});
-    return;
+    try {
+      await engine.playCard(botId, c.id);
+      return; // A successful play re-broadcasts and re-drives runBots.
+    } catch {
+      /* illegal play — try the next candidate */
+    }
   }
 
-  // Nothing (more) to play. If we haven't played yet, draw-for-turn (ends the
+  // Nothing legal to play. If we haven't played yet, draw-for-turn (ends the
   // turn); otherwise drawing is illegal this turn, so just end the turn.
-  if (state.playedThisTurn) {
+  if (engine.state.playedThisTurn) {
     void engine.endTurn(botId).catch(() => {});
   } else {
     void engine.drawForTurn(botId).catch(() => {});
