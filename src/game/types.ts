@@ -210,6 +210,9 @@ export interface GameState {
   pendingTurns: PlayerId[]; // extra turns (Change of Luck)
   phase: Phase;
   actionsRemaining: { plays: number; draws: number };
+  /** Whether the active player has played a card this turn. Drawing-for-turn is
+   * mutually exclusive with playing (e.g. Double Dutch: play 1–2 cards OR draw 1). */
+  playedThisTurn: boolean;
   /** Latest mandatory beginning-of-turn draw, used for the owner's UI cue. */
   lastAutoDrawn: { playerId: PlayerId; instanceId: InstanceId; turnNumber: number } | null;
 

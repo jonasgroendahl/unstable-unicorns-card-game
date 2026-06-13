@@ -108,6 +108,7 @@ describe("second-edition Magic and Upgrades", () => {
   it("Claw Machine discards a card, then draws a card", async () => {
     const h = new Harness({ deckId: SECOND_EDITION });
     await h.start();
+    h.clearHand("p1");
     const discard = h.giveCard("p1", "basic-unicorn-red");
     h.giveStable("p1", "claw-machine");
     const handBefore = h.state.hands.p1.length;

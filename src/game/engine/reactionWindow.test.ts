@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getDefinition } from "../cards";
+import { makeInstanceId } from "../ids";
 import { createInitialState } from "../state";
 import { REACTION_WINDOW_MS, type GameState, type PlayerId } from "../types";
 import { GameEngine } from "./GameEngine";
@@ -53,6 +54,12 @@ describe("reaction window timing", () => {
     );
     const engine = new GameEngine(state);
     await engine.startTurn();
+    // Clear the opening hands so only the scripted Neigh chain exists (the
+    // 2-player deal hands out incidental Neighs that would derail the script).
+    for (const pid of ["p1", "p2"] as const) {
+      for (const id of state.hands[pid]) state.instances[id].zone = "deck";
+      state.hands[pid] = [];
+    }
     const basic = giveCard(state, "p1", "basic-unicorn-blue");
     const firstNeigh = giveCard(state, "p2", "neigh");
     const counterNeigh = giveCard(state, "p1", "neigh");
@@ -111,7 +118,16 @@ function giveCard(state: GameState, playerId: PlayerId, slug: string): string {
     }
   }
 
-  if (!instanceId) throw new Error(`No ${slug} available`);
+  if (!instanceId) {
+    // Card not in this deck (e.g. excluded from the 2-player variant): fabricate it.
+    instanceId = makeInstanceId();
+    state.instances[instanceId] = {
+      instanceId,
+      defId: getDefinition(slug).id,
+      zone: "deck",
+      ownerId: null,
+    };
+  }
   state.instances[instanceId].zone = "hand";
   state.instances[instanceId].ownerId = playerId;
   state.hands[playerId].push(instanceId);

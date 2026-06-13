@@ -18,10 +18,13 @@ export interface SeatConfig {
  * Build the full deck of card instances (every copy of every non-baby card) plus
  * the Nursery of Baby Unicorns. Babies are NOT shuffled into the deck.
  */
-function buildCards(deckId: DeckId): { deck: CardInstance[]; babies: CardInstance[] } {
+function buildCards(
+  deckId: DeckId,
+  playerCount: number,
+): { deck: CardInstance[]; babies: CardInstance[] } {
   const deck: CardInstance[] = [];
   const babies: CardInstance[] = [];
-  for (const def of definitionsForDeck(deckId)) {
+  for (const def of definitionsForDeck(deckId, playerCount)) {
     for (let i = 0; i < def.copies; i++) {
       const inst: CardInstance = {
         instanceId: makeInstanceId(),
@@ -53,7 +56,7 @@ export function createInitialState(
     connected: true,
   }));
 
-  const { deck, babies } = buildCards(deckId);
+  const { deck, babies } = buildCards(deckId, seats.length);
   const instances: Record<InstanceId, CardInstance> = {};
   for (const c of [...deck, ...babies]) instances[c.instanceId] = c;
 
@@ -84,6 +87,7 @@ export function createInitialState(
     pendingTurns: [],
     phase: "beginning",
     actionsRemaining: { plays: 1, draws: 0 },
+    playedThisTurn: false,
     lastAutoDrawn: null,
     pendingDecisions: [],
     reaction: null,
@@ -100,6 +104,21 @@ export function createInitialState(
     inst.ownerId = p.id;
     inst.enteredTurn = 0;
     state.stables[p.id].push(babyId);
+  }
+
+  // 2-player variant: before dealing, hand each player a guaranteed Neigh so
+  // both start with one in hand (total of 6 cards once the 5 below are dealt).
+  // https://www.unstablegameswiki.com/index.php?title=Unstable_Unicorns_-_Two_Player_Rules
+  if (players.length === 2) {
+    for (const p of players) {
+      const neighIdx = state.deck.findIndex((id) => instances[id].defId === "neigh");
+      if (neighIdx < 0) break;
+      const [id] = state.deck.splice(neighIdx, 1);
+      const inst = instances[id];
+      inst.zone = "hand";
+      inst.ownerId = p.id;
+      state.hands[p.id].push(id);
+    }
   }
 
   // Deal opening hands.

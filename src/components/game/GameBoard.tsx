@@ -13,6 +13,7 @@ import { CardBack, CardView } from "./CardView.tsx";
 import { PlayerStable } from "./PlayerStable.tsx";
 import { HandFan } from "./HandFan.tsx";
 import { ReactionPrompt } from "./ReactionPrompt.tsx";
+import { NeighedScene, type NeighedEvent } from "./NeighedScene.tsx";
 import { DecisionOverlay, WaitingBanner } from "./DecisionOverlay.tsx";
 import { GameLog } from "./GameLog.tsx";
 import { AudioControl } from "./AudioControl.tsx";
@@ -64,6 +65,41 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
   const [inspectedOpponentId, setInspectedOpponentId] = useState<string | null>(null);
   const inspectedOpponent = opponents.find((player) => player.id === inspectedOpponentId);
   const stableDialogTitleRef = useRef<HTMLHeadingElement>(null);
+
+  // "Card was Neigh'd" takeover. The `neighed` log event carries no card data,
+  // so we cache the last reaction's target (card + owner) while its window is
+  // open and pair it with the event when the cancellation lands.
+  const [neighedEvent, setNeighedEvent] = useState<NeighedEvent | null>(null);
+  const reactionTargetRef = useRef<{ card: CardViewData; byPlayer: string } | null>(null);
+  const lastLogTRef = useRef<number | null>(null);
+  if (view.reaction?.targetCard) {
+    reactionTargetRef.current = {
+      card: view.reaction.targetCard,
+      byPlayer: view.reaction.targetByPlayer,
+    };
+  }
+  useEffect(() => {
+    // Seed the cursor on first view so we don't replay history on (re)connect.
+    if (lastLogTRef.current === null) {
+      lastLogTRef.current = view.log.length ? view.log[view.log.length - 1].t : 0;
+      return;
+    }
+    const seen = lastLogTRef.current;
+    for (const e of view.log) {
+      if (e.t <= seen || e.kind !== "neighed") continue;
+      const target = reactionTargetRef.current;
+      if (target) {
+        setNeighedEvent({
+          t: e.t,
+          card: target.card,
+          mine: target.byPlayer === view.viewerId,
+          ownerName: playName(target.byPlayer),
+        });
+      }
+    }
+    lastLogTRef.current = view.log.length ? view.log[view.log.length - 1].t : seen;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view.log]);
 
   // Unlock audio + start (optional) background music on first user gesture.
   useEffect(() => {
@@ -157,7 +193,8 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
     </div>
   );
 
-  const drawDisabled = !isMyTurn || view.phase !== "action" || !!decision || !!view.reaction;
+  const drawDisabled =
+    !isMyTurn || view.phase !== "action" || view.playedThisTurn || !!decision || !!view.reaction;
   const endDisabled = !isMyTurn || !!decision || !!view.reaction;
   const turnActions = (mobile: boolean) => (
     <div className={mobile ? "grid grid-cols-2 gap-2" : "flex flex-col gap-1.5"}>
@@ -379,6 +416,14 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
         <WaitingBanner
           name={playName(view.someoneDeciding.playerId)}
           prompt={view.someoneDeciding.prompt}
+        />
+      )}
+
+      {neighedEvent && view.status !== "finished" && (
+        <NeighedScene
+          key={neighedEvent.t}
+          event={neighedEvent}
+          onDismiss={() => setNeighedEvent(null)}
         />
       )}
 

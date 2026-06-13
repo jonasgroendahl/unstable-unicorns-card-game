@@ -13,7 +13,14 @@ export { EngineError } from "./engine/GameEngine";
 export type { GameView, PlayerView, CardView, DecisionView, ReactionView } from "./view";
 export { sanitizeFor } from "./view";
 export { allDefinitions, getDefinition } from "./cards";
-export { DECK_OPTIONS, DECKS, DEFAULT_DECK_ID, definitionsForDeck, isDeckId } from "./decks";
+export {
+  DECK_OPTIONS,
+  DECKS,
+  DEFAULT_DECK_ID,
+  definitionsForDeck,
+  isDeckId,
+  isExcludedInTwoPlayer,
+} from "./decks";
 export type { DeckId } from "./decks";
 export type * from "./types";
 

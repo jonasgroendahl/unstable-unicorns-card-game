@@ -1,29 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 430" role="img" aria-labelledby="title desc">
-  <title id="title">Bubblegum Hedgelet</title>
-  <desc id="desc">Original Unhinged Hedgehogs illustration: bow.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 430">
   <defs>
-    <linearGradient id="bg" x1="24" y1="18" x2="476" y2="412" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#75bfe8"/>
-      <stop offset="1" stop-color="#173f63"/>
-    </linearGradient>
-    <radialGradient id="glow"><stop stop-color="#fff8d8" stop-opacity=".72"/><stop offset="1" stop-color="#fff8d8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#c44b86"/><stop offset="1" stop-color="#3f1428"/></linearGradient>
+    <radialGradient id="spot" cx=".5" cy=".42" r=".62"><stop stop-color="#ffd2ec" stop-opacity=".5"/><stop offset="1" stop-color="#ffd2ec" stop-opacity="0"/></radialGradient>
   </defs>
-  <rect width="500" height="430" rx="34" fill="url(#bg)"/>
-  <circle cx="218" cy="-120" r="77" fill="#ffd86a" opacity=".22"/>
-  <circle cx="-304" cy="-94" r="-6" fill="#fff8d8" opacity=".16"/>
-  <path d="M0 337c82-48 146-23 235 4 96 29 167 27 265-20v109H0Z" fill="#173f63" opacity=".45"/>
-  <circle cx="255" cy="238" r="180" fill="url(#glow)" opacity=".38"/>
-  <g transform="translate(250 208) rotate(-7) scale(1 1)">
-    <path d="M-167 112-151 52l-47-28 57-22-23-57 62 12 8-64 53 37 37-54 33 56 57-30 4 65 64-5-27 59 56 26-49 40 35 54-65 7 11 63-61-21-23 61-46-46-45 47-24-60-61 23 9-64-65-5 34-55Z" fill="#242c3d"/>
-    <ellipse cx="25" cy="87" rx="143" ry="111" fill="#f1bd8b"/>
-    <circle cx="74" cy="32" r="12" fill="#182431"/>
-    <circle cx="78" cy="28" r="3.5" fill="#fff8d8"/>
-    <path d="M126 88c27-2 45 8 58 26-18 19-43 24-70 16Z" fill="#182431"/>
-    <path d="M-20 126c38 25 82 27 116 3" fill="none" stroke="#a55756" stroke-width="9" stroke-linecap="round"/>
-    <path d="M-65 145c-20 20-27 41-21 64M52 164c14 18 18 37 12 56" fill="none" stroke="#242c3d" stroke-width="13" stroke-linecap="round"/>
+  <rect width="500" height="430" fill="url(#bg)"/>
+  
+  <ellipse cx="250" cy="210" rx="235" ry="205" fill="url(#spot)"/>
+  <ellipse cx="250" cy="378" rx="190" ry="30" fill="#000" opacity=".16"/>
+  <g transform="translate(250 235) rotate(0) scale(1)">
+  <path d="M-96 36C-96-58-24-104 36-92 116-76 116 24 92 70 64 122-96 130-96 36Z" fill="#9c3a68"/>
+  <g stroke="#806244" stroke-width="6" stroke-linecap="round" opacity=".85">
+    <path d="M-74 18-96-6M-58-28-74-58M-24-42-28-80M22-40 24-80M58-30 76-58M84-6 108-22"/>
   </g>
-  <g transform="translate(100 90) rotate(14) scale(.68)">
-    <path d="M-8 0C-78-62-91 36-16 18M8 0c70-62 83 36 8 18" fill="#ffd86a" stroke="#173f63" stroke-width="8"/><circle r="18" fill="#173f63"/>
-  </g>
-  <path d="M24 34c74-26 135-24 202 7M476 396c-78 22-143 17-206-12" fill="none" stroke="#fff8d8" stroke-width="7" stroke-linecap="round" opacity=".58"/>
+  <ellipse cx="26" cy="34" rx="84" ry="72" fill="#f2a8cc"/>
+  <ellipse cx="32" cy="56" rx="56" ry="44" fill="#fbcde2" opacity=".55"/>
+  <path d="M88 30c30 0 44 18 42 36-2 16-20 24-40 20Z" fill="#f2a8cc"/>
+  <circle cx="126" cy="50" r="7" fill="#241d2b"/>
+  <ellipse cx="66" cy="64" rx="15" ry="9" fill="#ea8f7a" opacity=".5"/>
+  <g transform="translate(40 18) scale(.82)">
+    <circle cx="-16" cy="0" r="9" fill="#241d2b"/><circle cx="16" cy="0" r="9" fill="#241d2b"/>
+    <circle cx="-13.5" cy="-2.5" r="1.8" fill="#fff"/><circle cx="18.5" cy="-2.5" r="1.8" fill="#fff"/>
+    <path d="M-13 20q13 12 26 0" fill="none" stroke="#241d2b" stroke-width="4.5" stroke-linecap="round"/></g></g>
+      <!-- bow topper + bubblegum bubble -->
+      <g transform="translate(196 116)"><path d="M-6 0C-46-30-52 22-10 12M6 0c40-30 46 22 10 12" fill="#ff7ab0" stroke="#241d2b" stroke-width="2.5"/><circle r="8" fill="#e85b96"/></g>
+      <circle cx="300" cy="244" r="22" fill="#ff9ec8" opacity=".85" stroke="#241d2b" stroke-width="2"/>
 </svg>

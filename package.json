@@ -9,6 +9,7 @@
     "dev": "vp dev --port 3000",
     "generate-routes": "tsr generate",
     "gen-cards": "node scripts/gen-card-data.mjs",
+    "gen-hedgehog": "node scripts/gen-hedgehog-deck.mjs",
     "build": "vp build",
     "db:generate": "prisma generate",
     "db:migrate": "node --env-file-if-exists=.env.local node_modules/prisma/build/index.js migrate deploy",

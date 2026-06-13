@@ -1,29 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 430" role="img" aria-labelledby="title desc">
-  <title id="title">Acorn Hedgelet</title>
-  <desc id="desc">Original Unhinged Hedgehogs illustration: acorn.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 430">
   <defs>
-    <linearGradient id="bg" x1="24" y1="18" x2="476" y2="412" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#75bfe8"/>
-      <stop offset="1" stop-color="#173f63"/>
-    </linearGradient>
-    <radialGradient id="glow"><stop stop-color="#fff8d8" stop-opacity=".72"/><stop offset="1" stop-color="#fff8d8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#6e4a2c"/><stop offset="1" stop-color="#2c1c11"/></linearGradient>
+    <radialGradient id="spot" cx=".5" cy=".42" r=".62"><stop stop-color="#f3d9a8" stop-opacity=".5"/><stop offset="1" stop-color="#f3d9a8" stop-opacity="0"/></radialGradient>
   </defs>
-  <rect width="500" height="430" rx="34" fill="url(#bg)"/>
-  <circle cx="266" cy="250" r="55" fill="#ffd86a" opacity=".22"/>
-  <circle cx="332" cy="221" r="58" fill="#fff8d8" opacity=".16"/>
-  <path d="M0 337c82-48 146-23 235 4 96 29 167 27 265-20v109H0Z" fill="#173f63" opacity=".45"/>
-  <circle cx="255" cy="238" r="180" fill="url(#glow)" opacity=".38"/>
-  <g transform="translate(250 208) rotate(2) scale(1 1)">
-    <path d="M-167 112-151 52l-47-28 57-22-23-57 62 12 8-64 53 37 37-54 33 56 57-30 4 65 64-5-27 59 56 26-49 40 35 54-65 7 11 63-61-21-23 61-46-46-45 47-24-60-61 23 9-64-65-5 34-55Z" fill="#242c3d"/>
-    <ellipse cx="25" cy="87" rx="143" ry="111" fill="#f1bd8b"/>
-    <circle cx="74" cy="42" r="12" fill="#182431"/>
-    <circle cx="78" cy="38" r="3.5" fill="#fff8d8"/>
-    <path d="M126 88c27-2 45 8 58 26-18 19-43 24-70 16Z" fill="#182431"/>
-    <path d="M-20 126c38 25 82 27 116 3" fill="none" stroke="#a55756" stroke-width="9" stroke-linecap="round"/>
-    <path d="M-65 145c-20 20-27 41-21 64M52 164c14 18 18 37 12 56" fill="none" stroke="#242c3d" stroke-width="13" stroke-linecap="round"/>
+  <rect width="500" height="430" fill="url(#bg)"/>
+  
+  <ellipse cx="250" cy="210" rx="235" ry="205" fill="url(#spot)"/>
+  <ellipse cx="250" cy="378" rx="190" ry="30" fill="#000" opacity=".16"/>
+  <g transform="translate(250 235) rotate(0) scale(1)">
+  <path d="M-96 36C-96-58-24-104 36-92 116-76 116 24 92 70 64 122-96 130-96 36Z" fill="#4a3320"/>
+  <g stroke="#806244" stroke-width="6" stroke-linecap="round" opacity=".85">
+    <path d="M-74 18-96-6M-58-28-74-58M-24-42-28-80M22-40 24-80M58-30 76-58M84-6 108-22"/>
   </g>
-  <g transform="translate(100 126) rotate(-4) scale(.68)">
-    <path d="M-43-10c0-48 86-48 86 0v22h-86Z" fill="#173f63"/><path d="M-35 13h70c0 82-70 82-70 0Z" fill="#ffd86a"/>
-  </g>
-  <path d="M24 34c74-26 135-24 202 7M476 396c-78 22-143 17-206-12" fill="none" stroke="#fff8d8" stroke-width="7" stroke-linecap="round" opacity=".58"/>
+  <ellipse cx="26" cy="34" rx="84" ry="72" fill="#c79a6a"/>
+  <ellipse cx="32" cy="56" rx="56" ry="44" fill="#dcb789" opacity=".55"/>
+  <path d="M88 30c30 0 44 18 42 36-2 16-20 24-40 20Z" fill="#c79a6a"/>
+  <circle cx="126" cy="50" r="7" fill="#241d2b"/>
+  <ellipse cx="66" cy="64" rx="15" ry="9" fill="#ea8f7a" opacity=".5"/>
+  <g transform="translate(40 18) scale(.82)">
+    <circle cx="-16" cy="0" r="8" fill="#241d2b"/><circle cx="16" cy="0" r="8" fill="#241d2b"/>
+    <circle cx="-13.5" cy="-2.5" r="1.8" fill="#fff"/><circle cx="18.5" cy="-2.5" r="1.8" fill="#fff"/>
+    <path d="M-10 19q10 8 20 0" fill="none" stroke="#241d2b" stroke-width="4" stroke-linecap="round"/></g></g>
+      <!-- acorn cap topper -->
+      <g transform="translate(196 112)"><path d="M-34 4c0-30 68-30 68 0Z" fill="#7a5230"/><path d="M-30 4h60c0 40-60 40-60 0Z" fill="#a9743f"/><path d="M0-26v-12" stroke="#5a3c22" stroke-width="6" stroke-linecap="round"/></g>
 </svg>

@@ -118,6 +118,11 @@ function takeBotAction(engine: GameEngine, botId: PlayerId): void {
     return;
   }
 
-  // Nothing to play — draw a card (ends the turn).
-  void engine.drawForTurn(botId).catch(() => {});
+  // Nothing (more) to play. If we haven't played yet, draw-for-turn (ends the
+  // turn); otherwise drawing is illegal this turn, so just end the turn.
+  if (state.playedThisTurn) {
+    void engine.endTurn(botId).catch(() => {});
+  } else {
+    void engine.drawForTurn(botId).catch(() => {});
+  }
 }

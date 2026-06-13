@@ -1,29 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 430" role="img" aria-labelledby="title desc">
-  <title id="title">Shark-Quill</title>
-  <desc id="desc">Original Unhinged Hedgehogs illustration: shark.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 430">
   <defs>
-    <linearGradient id="bg" x1="24" y1="18" x2="476" y2="412" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#f18b74"/>
-      <stop offset="1" stop-color="#79464e"/>
-    </linearGradient>
-    <radialGradient id="glow"><stop stop-color="#fff8d8" stop-opacity=".72"/><stop offset="1" stop-color="#fff8d8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1f5a74"/><stop offset="1" stop-color="#0c242f"/></linearGradient>
+    <radialGradient id="spot" cx=".5" cy=".42" r=".62"><stop stop-color="#bfe6f0" stop-opacity=".5"/><stop offset="1" stop-color="#bfe6f0" stop-opacity="0"/></radialGradient>
   </defs>
-  <rect width="500" height="430" rx="34" fill="url(#bg)"/>
-  <circle cx="406" cy="110" r="81" fill="#ffd96c" opacity=".22"/>
-  <circle cx="410" cy="123" r="39" fill="#fff8d8" opacity=".16"/>
-  <path d="M0 337c82-48 146-23 235 4 96 29 167 27 265-20v109H0Z" fill="#79464e" opacity=".45"/>
-  <circle cx="255" cy="238" r="180" fill="url(#glow)" opacity=".38"/>
-  <g transform="translate(250 208) rotate(1) scale(-1 1)">
-    <path d="M-167 112-151 52l-47-28 57-22-23-57 62 12 8-64 53 37 37-54 33 56 57-30 4 65 64-5-27 59 56 26-49 40 35 54-65 7 11 63-61-21-23 61-46-46-45 47-24-60-61 23 9-64-65-5 34-55Z" fill="#242c3d"/>
-    <ellipse cx="25" cy="87" rx="143" ry="111" fill="#f1bd8b"/>
-    <circle cx="74" cy="54" r="12" fill="#182431"/>
-    <circle cx="78" cy="50" r="3.5" fill="#fff8d8"/>
-    <path d="M126 88c27-2 45 8 58 26-18 19-43 24-70 16Z" fill="#182431"/>
-    <path d="M-20 126c38 25 82 27 116 3" fill="none" stroke="#a55756" stroke-width="9" stroke-linecap="round"/>
-    <path d="M-65 145c-20 20-27 41-21 64M52 164c14 18 18 37 12 56" fill="none" stroke="#242c3d" stroke-width="13" stroke-linecap="round"/>
+  <rect width="500" height="430" fill="url(#bg)"/>
+  <g fill="#bfe6f0" opacity=".5"><circle cx="110" cy="120" r="6"/><circle cx="392" cy="140" r="5"/></g>
+  <ellipse cx="250" cy="210" rx="235" ry="205" fill="url(#spot)"/>
+  <ellipse cx="250" cy="378" rx="190" ry="30" fill="#000" opacity=".16"/>
+  <g transform="translate(250 235) rotate(0) scale(1)">
+  <path d="M-150 60C-150-78-60-140 30-128 132-114 150 8 120 86 90 150-150 178-150 60Z" fill="#1c4a60"/>
+  <g stroke="#806244" stroke-width="7" stroke-linecap="round" opacity=".85">
+    <path d="M-120 30-150-2M-104-18-128-58M-70-42-86-92M-30-54-36-108M16-54 18-110M58-46 74-96M96-28 122-64M118 2 152-18"/>
   </g>
-  <g transform="translate(100 136) rotate(-2) scale(.68)">
-    <path d="M-75 42C-20-54 45-64 78 16 35 2 5 20-10 60Z" fill="#ffd96c" stroke="#79464e" stroke-width="9"/><path d="M-8-30 23-84 42-21" fill="#79464e"/>
-  </g>
-  <path d="M24 34c74-26 135-24 202 7M476 396c-78 22-143 17-206-12" fill="none" stroke="#fff8d8" stroke-width="7" stroke-linecap="round" opacity=".58"/>
+  <ellipse cx="36" cy="44" rx="120" ry="100" fill="#8ab8c8"/>
+  <ellipse cx="44" cy="74" rx="78" ry="60" fill="#c2dde6" opacity=".55"/>
+  <path d="M120 36c40 2 60 26 58 50-2 22-26 34-54 30Z" fill="#8ab8c8"/>
+  <circle cx="171" cy="64" r="9" fill="#241d2b"/>
+  <ellipse cx="86" cy="88" rx="20" ry="12" fill="#ea8f7a" opacity=".5"/>
+  <g transform="translate(70 40)">
+    <path d="M-27-10 -8-2" stroke="#241d2b" stroke-width="5" stroke-linecap="round"/>
+    <path d="M27-10 8-2" stroke="#241d2b" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="-16" cy="4" r="7.5" fill="#241d2b"/><circle cx="16" cy="4" r="7.5" fill="#241d2b"/>
+    <path d="M-12 23q12 8 24 0" fill="none" stroke="#241d2b" stroke-width="4.5" stroke-linecap="round"/></g></g>
+      <!-- horn -->
+      <path d="M196 150q6-50 -4-82q26 26 24 80Z" fill="#eef6fa" stroke="#241d2b" stroke-width="3"/>
+      <!-- dorsal fin -->
+      <path d="M120 250q40-60 70-58q-6 40 -30 64Z" fill="#5a8ea0" stroke="#241d2b" stroke-width="3"/>
+      <!-- teeth -->
+      <path d="M300 296l8 12 8-12 8 12 8-12 8 12 8-12" fill="none" stroke="#fff" stroke-width="3"/>
 </svg>

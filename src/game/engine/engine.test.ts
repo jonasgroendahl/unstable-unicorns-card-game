@@ -8,10 +8,11 @@ describe("setup", () => {
   it("deals 5-card hands, a baby per stable, and starts on turn 1", async () => {
     const h = new Harness();
     expect(h.state.players.length).toBe(2);
-    // After start(), the active player has drawn 1 (6 cards); opponent has 5.
+    // 2-player variant: each player starts with a guaranteed Neigh + 5 cards (6).
+    // After start(), the active player has drawn 1 more (7 cards); opponent has 6.
     await h.start();
-    expect(h.state.hands.p1.length).toBe(6);
-    expect(h.state.hands.p2.length).toBe(5);
+    expect(h.state.hands.p1.length).toBe(7);
+    expect(h.state.hands.p2.length).toBe(6);
     expect(h.state.stables.p1.length).toBe(1);
     expect(getDefinition(h.state.instances[h.state.stables.p1[0]].defId).kind).toBe("baby");
     expect(h.state.phase).toBe("action");
@@ -30,6 +31,40 @@ describe("playing a basic unicorn", () => {
     await h.play("p1", basic);
     expect(h.stableSlugs("p1")).toContain("basic-unicorn-red");
     // Turn passed to p2 (single play used).
+    expect(h.engine.currentPlayerId()).toBe("p2");
+  });
+});
+
+describe("Double Dutch action economy", () => {
+  it("grants a second play but forbids drawing after a card has been played", async () => {
+    const h = new Harness();
+    h.giveStable("p1", "double-dutch");
+    await h.start();
+
+    // Double Dutch grants the extra play at beginning of turn.
+    expect(h.state.actionsRemaining.plays).toBe(2);
+    expect(h.state.playedThisTurn).toBe(false);
+
+    const u1 = h.giveCard("p1", "basic-unicorn-red");
+    await h.play("p1", u1);
+
+    // Still p1's turn (a play remains), but a card has now been played.
+    expect(h.engine.currentPlayerId()).toBe("p1");
+    expect(h.state.playedThisTurn).toBe(true);
+    expect(sanitizeFor(h.state, "p1").playedThisTurn).toBe(true);
+
+    // Drawing-for-turn is now illegal: play 1–2 cards OR draw 1, never both.
+    await expect(h.engine.drawForTurn("p1")).rejects.toThrow(/already played/);
+    expect(h.engine.currentPlayerId()).toBe("p1");
+  });
+
+  it("still allows draw-for-turn when no card has been played", async () => {
+    const h = new Harness();
+    h.giveStable("p1", "double-dutch");
+    await h.start();
+
+    await h.drawTurn("p1");
+    // Drawing ends the turn even with plays remaining.
     expect(h.engine.currentPlayerId()).toBe("p2");
   });
 });

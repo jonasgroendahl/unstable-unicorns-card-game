@@ -5,6 +5,7 @@
 import { GameEngine } from "./GameEngine";
 import { createInitialState, type SeatConfig } from "../state";
 import { getDefinition } from "../cards";
+import { makeInstanceId } from "../ids";
 import type { GameState, InstanceId, PendingDecision, PlayerId } from "../types";
 import { DEFAULT_DECK_ID, type DeckId } from "../decks";
 
@@ -138,7 +139,28 @@ export class Harness {
         return id;
       }
     }
-    throw new Error(`No free ${slug} available`);
+    // Some cards are intentionally absent from the deck (e.g. excluded from the
+    // 2-player variant). Fabricate an instance so mechanics can still be tested.
+    const def = getDefinition(slug);
+    const instanceId = makeInstanceId();
+    s.instances[instanceId] = { instanceId, defId: def.id, zone: "deck", ownerId: null };
+    return instanceId;
+  }
+
+  /**
+   * Empty a player's hand (cards return to the deck). Useful for scenario setup
+   * that needs a known hand without the opening deal's incidental cards (e.g. the
+   * guaranteed Neigh each player gets in the 2-player variant).
+   */
+  clearHand(playerId: PlayerId): void {
+    const hand = this.engine.state.hands[playerId];
+    for (const id of hand) {
+      const inst = this.engine.state.instances[id];
+      inst.zone = "deck";
+      inst.ownerId = null;
+      this.engine.state.deck.push(id);
+    }
+    this.engine.state.hands[playerId] = [];
   }
 
   /** Force a card into a player's hand (for setting up scenarios). */

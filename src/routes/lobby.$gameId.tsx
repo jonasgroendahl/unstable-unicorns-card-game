@@ -230,6 +230,7 @@ function LobbyView() {
 
             <DeckPicker
               value={lobby.deckId}
+              playerCount={lobby.seats.length}
               onChange={
                 isHost
                   ? async (deckId) => {

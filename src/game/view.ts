@@ -49,6 +49,8 @@ export interface GameView {
   nurseryCount: number;
   players: PlayerView[];
   actionsRemaining: { plays: number; draws: number };
+  /** Whether the active player has played a card this turn (draw-for-turn is then illegal). */
+  playedThisTurn: boolean;
   /** Mandatory beginning-of-turn card drawn for this viewer, if still relevant. */
   autoDrawnCardId: InstanceId | null;
   /** The decision THIS viewer must answer, if any. */
@@ -161,6 +163,7 @@ export function sanitizeFor(state: GameState, viewerId: PlayerId): GameView {
     nurseryCount: state.nursery.length,
     players,
     actionsRemaining: state.actionsRemaining,
+    playedThisTurn: state.playedThisTurn,
     autoDrawnCardId:
       state.lastAutoDrawn?.playerId === viewerId &&
       state.lastAutoDrawn.turnNumber === state.turnNumber

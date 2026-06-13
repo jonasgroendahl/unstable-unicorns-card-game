@@ -30,6 +30,31 @@ const SECOND_EDITION_ONLY = new Set([
   "stable-artillery",
 ]);
 
+/**
+ * Cards removed from the deck for the official 2-player variant to keep the
+ * game balanced. See https://www.unstablegameswiki.com/index.php?title=Unstable_Unicorns_-_Two_Player_Rules
+ */
+const TWO_PLAYER_EXCLUDED = new Set([
+  // All Basic Unicorns.
+  "basic-unicorn-blue",
+  "basic-unicorn-green",
+  "basic-unicorn-indigo",
+  "basic-unicorn-orange",
+  "basic-unicorn-purple",
+  "basic-unicorn-red",
+  "basic-unicorn-yellow",
+  // Specific cards.
+  "queen-bee-unicorn",
+  "seductive-unicorn",
+  "rainbow-unicorn",
+  "nanny-cam",
+  "sadistic-ritual",
+  "slowdown",
+  "yay",
+  "mother-goose-unicorn",
+  "necromancer-unicorn",
+]);
+
 export interface DeckConfig {
   id: DeckId;
   name: string;
@@ -61,7 +86,16 @@ export function isDeckId(value: string): value is DeckId {
   return DECK_IDS.includes(value as DeckId);
 }
 
-export function definitionsForDeck(deckId: DeckId): CardDefinition[] {
+export function definitionsForDeck(deckId: DeckId, playerCount?: number): CardDefinition[] {
   const excluded = deckId === "base-first-edition" ? SECOND_EDITION_ONLY : FIRST_EDITION_ONLY;
-  return allDefinitions().filter((definition) => !excluded.has(definition.id));
+  const twoPlayer = playerCount === 2;
+  return allDefinitions().filter(
+    (definition) =>
+      !excluded.has(definition.id) && !(twoPlayer && TWO_PLAYER_EXCLUDED.has(definition.id)),
+  );
+}
+
+/** True if `cardId` is removed from the deck in the official 2-player variant. */
+export function isExcludedInTwoPlayer(cardId: string): boolean {
+  return TWO_PLAYER_EXCLUDED.has(cardId);
 }

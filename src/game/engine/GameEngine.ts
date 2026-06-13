@@ -797,6 +797,7 @@ export class GameEngine {
     const pid = this.currentPlayerId();
     this.state.phase = "beginning";
     this.state.actionsRemaining = { plays: 1, draws: 0 };
+    this.state.playedThisTurn = false;
     this.state.lastAutoDrawn = null;
     this.pushLog(`${this.nameOf(pid)}'s turn begins`, { kind: "turn", playerId: pid });
     this.broadcast();
@@ -872,6 +873,7 @@ export class GameEngine {
 
     const snapshot = structuredClone(this.state);
     this.state.actionsRemaining.plays -= 1;
+    this.state.playedThisTurn = true;
     this.pushLog(`${this.nameOf(playerId)} plays ${def.name}`, {
       kind: "play",
       playerId,
@@ -962,6 +964,9 @@ export class GameEngine {
     return this.enqueue(async () => {
       if (playerId !== this.currentPlayerId()) throw new EngineError("Not your turn.");
       if (this.state.phase !== "action") throw new EngineError("You can't draw right now.");
+      if (this.state.playedThisTurn) {
+        throw new EngineError("You've already played this turn — you can't also draw.");
+      }
       await this.draw(playerId, 1);
       await this.checkStateBasedActions();
       // Drawing is the player's action for the turn — end it.
@@ -1028,6 +1033,7 @@ export class GameEngine {
     this.state.hands = snapshot.hands;
     this.state.stables = snapshot.stables;
     this.state.actionsRemaining = snapshot.actionsRemaining;
+    this.state.playedThisTurn = snapshot.playedThisTurn;
     this.state.phase = snapshot.phase;
     this.state.pendingDecisions = [];
     this.state.reaction = null;

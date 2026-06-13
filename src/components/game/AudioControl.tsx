@@ -24,7 +24,7 @@ export function AudioControl({ className, compact }: { className?: string; compa
         title={prefs.muted ? "Unmute" : "Mute"}
         aria-label={prefs.muted ? "Unmute" : "Mute"}
         className={cn(
-          "uu-glass grid size-10 place-items-center rounded-full text-white/80 hover:text-white",
+          "uu-hud-pill grid size-10 place-items-center rounded-full text-white/80 hover:text-white",
           className,
         )}
       >
@@ -34,7 +34,9 @@ export function AudioControl({ className, compact }: { className?: string; compa
   }
 
   return (
-    <div className={cn("uu-glass flex items-center gap-2 rounded-full px-2.5 py-1.5", className)}>
+    <div
+      className={cn("uu-hud-pill flex items-center gap-2 rounded-full px-2.5 py-1.5", className)}
+    >
       <button
         onClick={() => {
           audio.unlock();

@@ -132,7 +132,7 @@ export function DecisionOverlay({
       prompt={decision.prompt}
       subtitle={multi ? `Select ${min === max ? min : `${min}–${max}`}.` : undefined}
     >
-      <div className="uu-decision-cards flex max-h-[40vh] flex-wrap justify-center gap-2 overflow-y-auto p-1">
+      <div className="uu-decision-cards flex max-h-[40vh] flex-wrap justify-center gap-2 overflow-y-auto px-3 pb-3 pt-5">
         {(decision.optionCards ?? []).map((c) => (
           <CardView
             key={c.instanceId}
