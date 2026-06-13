@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700">
+  <defs>
+    <linearGradient id="bg" x1="28" y1="18" x2="472" y2="682" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#244978"/>
+      <stop offset=".55" stop-color="#4b3c91"/>
+      <stop offset="1" stop-color="#9c4b91"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#9ff8ee" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#9ff8ee" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="500" height="700" rx="42" fill="url(#bg)"/>
+  <circle cx="250" cy="340" r="230" fill="url(#glow)" opacity=".45"/>
+  <g fill="#d4fff7">
+    <circle cx="97" cy="180" r="8"/><circle cx="402" cy="143" r="6"/><circle cx="420" cy="350" r="9"/>
+    <circle cx="90" cy="393" r="5"/><circle cx="350" cy="223" r="5"/><circle cx="165" cy="235" r="7"/>
+  </g>
+  <path d="m84 474 31-88-55-49 91-25-18-94 91 30 49-85 62 77 88-44-6 99 93 10-53 79 69 63-91 27 18 94-91-26-47 85-64-73-88 48 4-99Z" fill="#24243d"/>
+  <ellipse cx="272" cy="431" rx="151" ry="130" fill="#eebd94"/>
+  <circle cx="324" cy="397" r="13" fill="#172438"/>
+  <path d="M388 438c31-1 50 12 61 31-20 19-48 24-76 13Z" fill="#172438"/>
+  <path d="M222 478c37 28 84 32 120 7" fill="none" stroke="#9c5553" stroke-linecap="round" stroke-width="10"/>
+  <path d="M174 291c45-67 108-83 185-44-42 15-77 54-91 103-20-36-52-56-94-59Z" fill="#83e8dc"/>
+  <circle cx="268" cy="256" r="20" fill="#f9e775"/>
+  <rect x="34" y="34" width="432" height="632" rx="30" fill="none" stroke="#fff" stroke-opacity=".78" stroke-width="8"/>
+  <text x="250" y="90" fill="#d9fff8" font-family="Arial, sans-serif" font-size="34" font-weight="900" text-anchor="middle">PRICKLY ORACLE</text>
+  <text x="250" y="632" fill="#d9fff8" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="4" text-anchor="middle">SEES YOUR MOVE</text>
+</svg>

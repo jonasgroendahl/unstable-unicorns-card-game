@@ -43,6 +43,18 @@ export const getGameHistory = createServerFn({ method: "GET" }).handler(() =>
   registry.getGameHistory(),
 );
 
+export const joinMatchmakingQueue = createServerFn({ method: "POST" })
+  .validator(z.object({ name: z.string().trim().min(1).max(20) }))
+  .handler(({ data }) => registry.joinMatchmaking(data.name));
+
+export const getMatchmakingStatus = createServerFn({ method: "POST" })
+  .validator(z.object({ ticketId: z.string().min(1) }))
+  .handler(({ data }) => registry.getMatchmakingStatus(data.ticketId));
+
+export const leaveMatchmakingQueue = createServerFn({ method: "POST" })
+  .validator(z.object({ ticketId: z.string().min(1) }))
+  .handler(({ data }) => registry.leaveMatchmaking(data.ticketId));
+
 export const addBotToLobby = createServerFn({ method: "POST" })
   .validator(z.object({ gameId: z.string() }))
   .handler(async ({ data }) => {

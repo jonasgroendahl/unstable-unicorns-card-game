@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700">
+  <defs>
+    <linearGradient id="bg" x1="35" y1="28" x2="465" y2="672" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f9df74"/>
+      <stop offset=".55" stop-color="#f4a64e"/>
+      <stop offset="1" stop-color="#d95d45"/>
+    </linearGradient>
+    <radialGradient id="halo">
+      <stop stop-color="#fff7c7"/>
+      <stop offset="1" stop-color="#fff7c7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="500" height="700" rx="42" fill="url(#bg)"/>
+  <circle cx="250" cy="310" r="220" fill="url(#halo)" opacity=".62"/>
+  <path d="M86 470 112 390 66 338l83-22-17-90 85 28 49-79 57 69 82-43-3 92 88 9-48 76 67 57-84 29 18 88-88-22-45 80-61-68-81 45 1-92Z" fill="#4b2c42"/>
+  <ellipse cx="273" cy="428" rx="152" ry="132" fill="#f6c999"/>
+  <circle cx="325" cy="394" r="13" fill="#202735"/>
+  <path d="M390 434c31-1 50 12 61 31-20 19-48 24-76 13Z" fill="#202735"/>
+  <path d="M215 475c38 30 86 35 124 9" fill="none" stroke="#a95950" stroke-linecap="round" stroke-width="10"/>
+  <path d="m177 242 40-79 38 82" fill="#176d6b"/>
+  <path d="m251 241 45-92 41 93" fill="#1c827c"/>
+  <path d="m328 254 48-76 27 97" fill="#176d6b"/>
+  <rect x="34" y="34" width="432" height="632" rx="30" fill="none" stroke="#fff" stroke-opacity=".78" stroke-width="8"/>
+  <text x="250" y="90" fill="#35243b" font-family="Arial, sans-serif" font-size="34" font-weight="900" text-anchor="middle">BOLD SCOUT</text>
+  <text x="250" y="632" fill="#fff8db" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="4" text-anchor="middle">READY TO ROLL</text>
+</svg>

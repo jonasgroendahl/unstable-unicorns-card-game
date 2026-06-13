@@ -47,8 +47,8 @@ export function DeckPicker({
   }, [previewDeckId, query]);
 
   return (
-    <div className="flex flex-col gap-2">
-      <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-white/60">
+    <div className="uu-deck-picker flex flex-col gap-2">
+      <span className="uu-deck-picker-label flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
         <Layers3 data-icon="inline-start" /> Deck
       </span>
       <ToggleGroup
@@ -60,24 +60,26 @@ export function DeckPicker({
         onValueChange={(next) => {
           if (next) onChange?.(next as DeckId);
         }}
-        className="grid w-full grid-cols-2"
+        className="uu-deck-options grid w-full grid-cols-2"
         aria-label="Choose a deck"
       >
         {DECK_OPTIONS.map((deck) => (
-          <div key={deck.id} className="relative min-w-0">
+          <div key={deck.id} className="uu-deck-option relative min-w-0">
             <ToggleGroupItem
               value={deck.id}
               aria-label={deck.name}
-              className="h-full min-h-28 w-full flex-col items-start justify-start gap-1 whitespace-normal px-3 pb-11 pt-2 text-left"
+              className="uu-deck-option-toggle h-full min-h-28 w-full flex-col items-start justify-start gap-1 whitespace-normal px-3 pb-11 pt-2 text-left"
             >
-              <span className="font-semibold">{deck.shortName}</span>
-              <span className="text-xs font-normal opacity-70">{deck.description}</span>
+              <span className="uu-deck-option-title font-semibold">{deck.shortName}</span>
+              <span className="uu-deck-option-description text-xs font-normal">
+                {deck.description}
+              </span>
             </ToggleGroupItem>
             <Button
               type="button"
               size="sm"
               variant="ghost"
-              className="absolute bottom-1.5 left-1.5 right-1.5 w-auto"
+              className="uu-deck-preview absolute right-1.5 bottom-1.5 left-1.5 w-auto"
               aria-label={`Preview ${deck.name} cards`}
               onClick={() => {
                 setQuery("");

@@ -17,6 +17,8 @@ pnpm dev          # http://localhost:3000
   - AI bots, no lobby needed. One screen, switchable viewpoint. Best for testing.
 - **Host game** — creates a lobby with a join code; add bots, then start.
 - **Join** — enter a friend's join code to take a seat.
+- **Find 4-player game** — join the solo queue and start automatically when four
+  active players are ready.
 
 ## What's implemented
 
@@ -57,10 +59,11 @@ Browser (React) ──command (server fn)──▶ GameEngine (live, authoritati
 - `src/components/game/` — the board UI; `src/lib/gameClient.ts` abstracts local
   (in‑process) vs. remote (SSE) play behind one interface.
 
-Live engines and SSE subscribers are process-local, so run one active app
-instance. Lobby data and settled game snapshots are stored in Postgres and
-hydrated after a restart. If the process restarts during a card choice or Neigh
-window, that in-flight command rolls back to the last settled snapshot.
+Live engines, SSE subscribers, and the solo matchmaking queue are process-local,
+so run one active app instance. Lobby data and settled game snapshots are stored
+in Postgres and hydrated after a restart. If the process restarts during a card
+choice or Neigh window, that in-flight command rolls back to the last settled
+snapshot.
 
 ## Database
 

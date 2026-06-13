@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700">
+  <defs>
+    <linearGradient id="bg" x1="30" y1="24" x2="470" y2="676" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#54d4c5"/>
+      <stop offset=".55" stop-color="#1a8e91"/>
+      <stop offset="1" stop-color="#15516d"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#e8fff4"/>
+      <stop offset="1" stop-color="#e8fff4" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="500" height="700" rx="42" fill="url(#bg)"/>
+  <circle cx="250" cy="328" r="230" fill="url(#glow)" opacity=".38"/>
+  <path d="m77 469 38-83-58-51 93-20-15-95 88 32 52-83 58 75 88-39-8 96 91 16-56 76 66 66-92 20 13 96-87-31-54 81-58-76-88 40 9-96Z" fill="#17333d"/>
+  <ellipse cx="270" cy="431" rx="151" ry="130" fill="#efc29a"/>
+  <path d="M137 366c58-51 150-71 239-38-43 35-77 71-104 112-40-42-83-67-135-74Z" fill="#2d4253"/>
+  <circle cx="324" cy="398" r="13" fill="#101f2c"/>
+  <path d="M389 438c31-1 50 12 61 31-20 19-48 24-76 13Z" fill="#101f2c"/>
+  <path d="M220 478c36 27 83 31 119 6" fill="none" stroke="#9e5652" stroke-linecap="round" stroke-width="10"/>
+  <path d="m167 355 60-95 70 66 68-84 48 101c-88-32-167-26-246 12Z" fill="#e85f75"/>
+  <rect x="34" y="34" width="432" height="632" rx="30" fill="none" stroke="#fff" stroke-opacity=".78" stroke-width="8"/>
+  <text x="250" y="90" fill="#eafff8" font-family="Arial, sans-serif" font-size="34" font-weight="900" text-anchor="middle">SNEAKY ROGUE</text>
+  <text x="250" y="632" fill="#eafff8" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="4" text-anchor="middle">TOTALLY INNOCENT</text>
+</svg>

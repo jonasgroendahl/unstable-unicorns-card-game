@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Bot, Copy, Crown, Play, User, X } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  ArrowLeft,
+  Bot,
+  Copy,
+  Crown,
+  Gamepad2,
+  Play,
+  ShieldCheck,
+  Sparkles,
+  User,
+  Users,
+  X,
+  Zap,
+} from "lucide-react";
+import { Badge } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
 import { toast } from "sonner";
 import { addBotToLobby, getLobby, removeSeat, setLobbyDeck, startGame } from "#/server/actions.ts";
@@ -8,12 +22,14 @@ import type { Lobby } from "#/server/registry.ts";
 import { useSessionSeatId } from "#/lib/useSessionSeatId.ts";
 import { DECKS } from "#/game/decks.ts";
 import { DeckPicker } from "#/components/game/DeckPicker.tsx";
+import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
 
 export const Route = createFileRoute("/lobby/$gameId")({ component: LobbyView });
 
 function LobbyView() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
+  const { theme } = useGameTheme();
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const youId = useSessionSeatId(gameId);
 
@@ -42,114 +58,245 @@ function LobbyView() {
 
   if (!lobby || youId === undefined) {
     return (
-      <div className="uu-root uu-starfield flex min-h-dvh items-center justify-center">
-        <p className="text-white/60">Loading lobby…</p>
-      </div>
+      <main className="uu-lobby uu-lobby-loading">
+        <div className="uu-lobby-loading-card">
+          <span aria-hidden="true" />
+          <strong>Opening battle room…</strong>
+        </div>
+      </main>
     );
   }
 
   const isHost = youId === lobby.hostId;
   const canStart = lobby.seats.length >= 2;
+  const openSeats = Math.max(0, 8 - lobby.seats.length);
+  const winAt = lobby.seats.length >= 6 ? 6 : 7;
 
   return (
-    <div className="uu-root uu-starfield flex min-h-dvh items-center justify-center p-6">
-      <div className="uu-glass relative z-10 w-full max-w-lg rounded-2xl p-6">
-        <h1 className="uu-display mb-1 text-2xl font-bold text-amber-200">Lobby</h1>
-        <div className="mb-4 flex items-center gap-2">
-          <span className="text-sm text-white/60">Join code:</span>
-          <button
-            className="flex items-center gap-1.5 rounded-lg bg-black/40 px-3 py-1 font-mono text-lg tracking-widest text-amber-200"
-            onClick={() => {
-              void navigator.clipboard?.writeText(lobby.joinCode);
-              toast.success("Join code copied");
-            }}
-          >
-            {lobby.joinCode} <Copy className="size-3.5" />
-          </button>
-        </div>
+    <main className="uu-lobby">
+      <div className="uu-home-speed-lines" aria-hidden="true" />
+      <div className="uu-home-orb uu-home-orb-one" aria-hidden="true" />
+      <div className="uu-home-orb uu-home-orb-two" aria-hidden="true" />
 
-        <div className="mb-5">
-          <DeckPicker
-            value={lobby.deckId}
-            onChange={
-              isHost
-                ? async (deckId) => {
-                    try {
-                      setLobby(await setLobbyDeck({ data: { gameId, playerId: youId, deckId } }));
-                    } catch (error) {
-                      toast.error((error as Error).message);
-                    }
-                  }
-                : undefined
-            }
-          />
-          {!isHost && (
-            <p className="mt-2 text-xs text-white/50">The host chooses the deck for this game.</p>
-          )}
-        </div>
+      <div className="uu-lobby-shell">
+        <header className="uu-lobby-topbar">
+          <Link className="uu-lobby-back" to="/">
+            <ArrowLeft aria-hidden="true" />
+            Main menu
+          </Link>
 
-        <div className="space-y-2">
-          {lobby.seats.map((s) => (
-            <div
-              key={s.id}
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2"
-            >
-              <div className="grid size-7 place-items-center rounded-full bg-white/15">
-                {s.isBot ? <Bot className="size-4" /> : <User className="size-4" />}
-              </div>
-              <span className="font-medium">{s.name}</span>
-              {s.id === lobby.hostId && <Crown className="size-4 text-amber-300" />}
-              {s.id === youId && <span className="text-xs text-amber-200/80">(you)</span>}
-              {isHost && s.id !== lobby.hostId && (
-                <button
-                  className="ml-auto text-white/40 hover:text-rose-300"
-                  onClick={() =>
-                    removeSeat({ data: { gameId, seatId: s.id } }).then((l) => setLobby(l ?? null))
-                  }
-                  title="Remove"
-                >
-                  <X className="size-4" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+          <div className="uu-lobby-mini-brand">
+            <span>
+              <img src={theme.mark} alt="" />
+            </span>
+            <strong>{theme.name}</strong>
+          </div>
 
-        <p className="mt-3 text-xs text-white/50">
-          {lobby.seats.length}/8 players · {DECKS[lobby.deckId].shortName} · win at{" "}
-          {lobby.seats.length >= 6 ? 6 : 7} unicorns
-        </p>
+          <Badge className="uu-lobby-status">
+            <span aria-hidden="true" />
+            Room online
+          </Badge>
+        </header>
 
-        {isHost ? (
-          <div className="mt-5 flex gap-2">
-            <Button
-              variant="outline"
-              disabled={lobby.seats.length >= 8}
-              onClick={() => addBotToLobby({ data: { gameId } }).then((l) => l && setLobby(l))}
-            >
-              <Bot className="size-4" /> Add bot
-            </Button>
-            <Button
-              className="ml-auto bg-amber-400 text-black hover:bg-amber-300"
-              disabled={!canStart}
-              onClick={async () => {
-                try {
-                  await startGame({ data: { gameId } });
-                  await navigate({ to: "/play/$gameId", params: { gameId } });
-                } catch (e) {
-                  toast.error((e as Error).message);
-                }
+        <section className="uu-lobby-hero">
+          <div>
+            <Badge className="uu-lobby-kicker">
+              <Gamepad2 /> Multiplayer battle room
+            </Badge>
+            <h1>{theme.lobbyHeading}</h1>
+            <p>{theme.lobbyDescription}</p>
+          </div>
+
+          <div className="uu-lobby-code-wrap">
+            <span>Invite code</span>
+            <button
+              className="uu-lobby-code"
+              onClick={() => {
+                void navigator.clipboard?.writeText(lobby.joinCode);
+                toast.success("Join code copied");
               }}
             >
-              <Play className="size-4" /> Start game
-            </Button>
+              <strong>{lobby.joinCode}</strong>
+              <Copy aria-hidden="true" />
+            </button>
+            <small>Click to copy and send to your rivals</small>
           </div>
-        ) : (
-          <p className="mt-5 text-center text-sm text-white/60">
-            Waiting for the host to start the game…
-          </p>
-        )}
+        </section>
+
+        <section className="uu-lobby-grid">
+          <div className="uu-lobby-panel uu-lobby-roster">
+            <div className="uu-lobby-panel-head">
+              <div>
+                <span>Battle roster</span>
+                <h2>Players in the room</h2>
+              </div>
+              <Badge className="uu-lobby-count">
+                <Users /> {lobby.seats.length}/8
+              </Badge>
+            </div>
+
+            <div className="uu-lobby-seats">
+              {lobby.seats.map((seat, index) => (
+                <div
+                  key={seat.id}
+                  className="uu-lobby-seat"
+                  data-host={seat.id === lobby.hostId}
+                  data-you={seat.id === youId}
+                  data-connected={seat.connected}
+                >
+                  <span className="uu-lobby-seat-number">{index + 1}</span>
+                  <span className="uu-lobby-avatar">
+                    {seat.isBot ? <Bot aria-hidden="true" /> : <User aria-hidden="true" />}
+                  </span>
+                  <span className="uu-lobby-seat-name">
+                    <strong>{seat.name}</strong>
+                    <small>
+                      {seat.id === youId
+                        ? "You"
+                        : seat.isBot
+                          ? "Bot player"
+                          : seat.connected
+                            ? "Ready to play"
+                            : "Reconnecting…"}
+                    </small>
+                  </span>
+                  {seat.id === lobby.hostId && (
+                    <Badge className="uu-lobby-host-badge">
+                      <Crown /> Host
+                    </Badge>
+                  )}
+                  {isHost && seat.id !== lobby.hostId && (
+                    <button
+                      className="uu-lobby-remove"
+                      onClick={() =>
+                        removeSeat({ data: { gameId, seatId: seat.id } }).then((nextLobby) =>
+                          setLobby(nextLobby ?? null),
+                        )
+                      }
+                      title={`Remove ${seat.name}`}
+                      aria-label={`Remove ${seat.name}`}
+                    >
+                      <X aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {Array.from({ length: openSeats }, (_, index) => (
+                <div key={`open-seat-${index}`} className="uu-lobby-seat uu-lobby-seat-open">
+                  <span className="uu-lobby-seat-number">{lobby.seats.length + index + 1}</span>
+                  <span className="uu-lobby-avatar">
+                    <Sparkles aria-hidden="true" />
+                  </span>
+                  <span className="uu-lobby-seat-name">
+                    <strong>Open seat</strong>
+                    <small>Waiting for a player</small>
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="uu-lobby-roster-footer">
+              <p>
+                <ShieldCheck aria-hidden="true" />
+                {canStart
+                  ? "Enough players to start the battle."
+                  : "Invite one more player or add a bot to begin."}
+              </p>
+              {isHost && (
+                <Button
+                  className="uu-lobby-add-bot"
+                  disabled={lobby.seats.length >= 8}
+                  onClick={() =>
+                    addBotToLobby({ data: { gameId } }).then((next) => next && setLobby(next))
+                  }
+                >
+                  <Bot data-icon="inline-start" /> Add bot
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="uu-lobby-panel uu-lobby-setup">
+            <div className="uu-lobby-panel-head">
+              <div>
+                <span>Match setup</span>
+                <h2>Choose your chaos</h2>
+              </div>
+              <span className="uu-lobby-setup-icon" aria-hidden="true">
+                <Zap />
+              </span>
+            </div>
+
+            <DeckPicker
+              value={lobby.deckId}
+              onChange={
+                isHost
+                  ? async (deckId) => {
+                      try {
+                        setLobby(await setLobbyDeck({ data: { gameId, playerId: youId, deckId } }));
+                      } catch (error) {
+                        toast.error((error as Error).message);
+                      }
+                    }
+                  : undefined
+              }
+            />
+
+            {!isHost && (
+              <p className="uu-lobby-guest-note">The host chooses the deck for this game.</p>
+            )}
+
+            <div className="uu-lobby-rules">
+              <div>
+                <span>Players</span>
+                <strong>{lobby.seats.length}/8</strong>
+              </div>
+              <div>
+                <span>Deck</span>
+                <strong>{DECKS[lobby.deckId].shortName}</strong>
+              </div>
+              <div>
+                <span>Victory</span>
+                <strong>{winAt} unicorns</strong>
+              </div>
+            </div>
+
+            {isHost ? (
+              <Button
+                className="uu-lobby-start"
+                disabled={!canStart}
+                onClick={async () => {
+                  try {
+                    await startGame({ data: { gameId } });
+                    await navigate({ to: "/play/$gameId", params: { gameId } });
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
+                }}
+              >
+                <Play data-icon="inline-start" />
+                <span>
+                  <strong>{canStart ? "Start battle" : "Waiting for players"}</strong>
+                  <small>
+                    {canStart
+                      ? `${lobby.seats.length} players ready for chaos`
+                      : "You need at least 2 players"}
+                  </small>
+                </span>
+              </Button>
+            ) : (
+              <div className="uu-lobby-waiting" role="status">
+                <span aria-hidden="true" />
+                <div>
+                  <strong>Waiting for the host</strong>
+                  <small>The battle will begin when everyone is ready.</small>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

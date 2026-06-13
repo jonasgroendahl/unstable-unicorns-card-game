@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { MemoryGamePersistence } from "./persistence";
-import { createRegistryStore, Registry } from "./registry";
+import { createRegistryStore, MATCHMAKING_STALE_AFTER_MS, Registry } from "./registry";
 
 it("refreshes registry code while preserving cached game data across module reloads", async () => {
   const firstModule = await import("./registry");
@@ -121,4 +121,76 @@ it("does not record games containing bots", async () => {
   await registry.flush(lobby.gameId);
 
   expect(await registry.getGameHistory()).toEqual({ leaderboard: [], games: [] });
+});
+
+it("honestly reports when nobody else is in the matchmaking queue", async () => {
+  const registry = new Registry(createRegistryStore(new MemoryGamePersistence()));
+
+  const status = await registry.joinMatchmaking("Alice");
+
+  expect(status).toMatchObject({
+    status: "waiting",
+    playersWaiting: 1,
+    otherPlayersWaiting: 0,
+    matchSize: 4,
+  });
+});
+
+it("reports other active players while the matchmaking queue is filling", async () => {
+  const registry = new Registry(createRegistryStore(new MemoryGamePersistence()));
+  const alice = await registry.joinMatchmaking("Alice");
+  const bob = await registry.joinMatchmaking("Bob");
+
+  expect(bob).toMatchObject({ playersWaiting: 2, otherPlayersWaiting: 1 });
+  expect(await registry.getMatchmakingStatus(alice.ticketId)).toMatchObject({
+    playersWaiting: 2,
+    otherPlayersWaiting: 1,
+  });
+});
+
+it("starts an all-human game when exactly four matchmaking players are queued", async () => {
+  const registry = new Registry(createRegistryStore(new MemoryGamePersistence()));
+  const joined = await Promise.all(
+    ["Alice", "Bob", "Carol", "Dave"].map((name) => registry.joinMatchmaking(name)),
+  );
+  const statuses = await Promise.all(
+    joined.map((ticket) => registry.getMatchmakingStatus(ticket.ticketId)),
+  );
+
+  expect(statuses.every((status) => status.status === "matched")).toBe(true);
+  expect(new Set(statuses.map((status) => status.gameId)).size).toBe(1);
+
+  const gameId = statuses[0].gameId!;
+  expect(await registry.getLobby(gameId)).toMatchObject({
+    status: "active",
+    seats: [
+      { name: "Alice", isBot: false },
+      { name: "Bob", isBot: false },
+      { name: "Carol", isBot: false },
+      { name: "Dave", isBot: false },
+    ],
+  });
+  expect((await registry.getEngine(gameId))?.state.players).toHaveLength(4);
+});
+
+it("removes players who leave or stop heartbeating from the matchmaking count", async () => {
+  const registry = new Registry(createRegistryStore(new MemoryGamePersistence()));
+  let now = 1_000;
+  vi.spyOn(Date, "now").mockImplementation(() => now);
+
+  const alice = await registry.joinMatchmaking("Alice");
+  const bob = await registry.joinMatchmaking("Bob");
+  await registry.leaveMatchmaking(bob.ticketId);
+
+  expect(await registry.getMatchmakingStatus(alice.ticketId)).toMatchObject({
+    playersWaiting: 1,
+    otherPlayersWaiting: 0,
+  });
+
+  now += MATCHMAKING_STALE_AFTER_MS + 1;
+  expect(await registry.getMatchmakingStatus(alice.ticketId)).toMatchObject({
+    status: "not_found",
+    playersWaiting: 0,
+    otherPlayersWaiting: 0,
+  });
 });

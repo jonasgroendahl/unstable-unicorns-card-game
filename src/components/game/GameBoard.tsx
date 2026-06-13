@@ -20,6 +20,7 @@ import { WinScreen } from "./WinScreen.tsx";
 import { audio } from "#/lib/audio.ts";
 import type { GameView, CardView as CardViewData } from "#/game/view.ts";
 import type { Answer } from "#/lib/gameClient.ts";
+import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
 
 export interface BoardActions {
   playCard: (instanceId: string) => Promise<string | void>;
@@ -37,6 +38,7 @@ interface GameBoardProps {
 }
 
 export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
+  const { theme } = useGameTheme();
   const me = view.players.find((p) => p.id === view.viewerId)!;
   const opponents = view.players.filter((p) => p.id !== view.viewerId);
   const isMyTurn = view.currentPlayerId === view.viewerId;
@@ -185,12 +187,12 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
       {/* top bar */}
       <header className="uu-game-header relative z-20 flex shrink-0 items-center gap-2 px-3 py-2">
         <span className="uu-display hidden text-lg font-bold text-amber-200 sm:inline">
-          <Sparkles className="mb-0.5 mr-1 inline size-4" />
-          Unstable Unicorns
+          <img src={theme.mark} alt="" className="mr-1 inline size-4 rounded-sm" />
+          {theme.name}
         </span>
         <span className="uu-display text-sm font-bold text-amber-200 sm:hidden">
-          <Sparkles className="mr-1 inline size-3.5" />
-          UU
+          <img src={theme.mark} alt="" className="mr-1 inline size-3.5 rounded-sm" />
+          {theme.shortName}
         </span>
         <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] sm:py-0.5 sm:text-xs">
           Turn {view.turnNumber} · {playName(view.currentPlayerId)}

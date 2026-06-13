@@ -1,16 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CalendarDays, Crown, History, Trophy, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Crown,
+  Gamepad2,
+  History,
+  Medal,
+  Swords,
+  Trophy,
+  Users,
+  Zap,
+} from "lucide-react";
 import { Avatar, AvatarFallback } from "#/components/ui/avatar.tsx";
 import { Badge } from "#/components/ui/badge.tsx";
-import { Button } from "#/components/ui/button.tsx";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "#/components/ui/card.tsx";
 import { getGameHistory } from "#/server/actions.ts";
+import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
 
 export const Route = createFileRoute("/history")({
   loader: () => getGameHistory(),
@@ -23,108 +27,206 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
 });
 
 function HistoryPage() {
+  const { theme } = useGameTheme();
   const { leaderboard, games } = Route.useLoaderData();
+  const champion = leaderboard[0];
+  const podium = leaderboard.slice(0, 3);
+  const remainingPlayers = leaderboard.slice(3);
 
   return (
-    <main className="uu-root uu-starfield min-h-dvh px-4 py-8 sm:px-6">
-      <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <Badge variant="secondary">
-              <Users /> Human games only
-            </Badge>
-            <h1 className="uu-display mt-3 text-4xl font-bold text-amber-200">Hall of Unicorns</h1>
-            <p className="mt-1 text-sm text-white/60">
-              Leaderboard standings and every completed game played without bots.
-            </p>
+    <main className="uu-history">
+      <div className="uu-home-speed-lines" aria-hidden="true" />
+      <div className="uu-home-orb uu-home-orb-one" aria-hidden="true" />
+      <div className="uu-home-orb uu-home-orb-two" aria-hidden="true" />
+
+      <div className="uu-history-shell">
+        <header className="uu-history-topbar">
+          <Link className="uu-history-back" to="/">
+            <ArrowLeft aria-hidden="true" />
+            Main menu
+          </Link>
+
+          <div className="uu-history-mini-brand">
+            <span>
+              <img src={theme.mark} alt="" />
+            </span>
+            <strong>{theme.name}</strong>
           </div>
-          <Button variant="outline" asChild>
-            <Link to="/">
-              <ArrowLeft data-icon="inline-start" /> Home
-            </Link>
-          </Button>
+
+          <Badge className="uu-history-human-badge">
+            <Users /> Human games only
+          </Badge>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="text-amber-300" /> Leaderboard
-              </CardTitle>
-              <CardDescription>Ranked by wins, then win rate and games played.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-1">
-              {leaderboard.length === 0 ? (
-                <p className="py-10 text-center text-sm text-muted-foreground">
-                  Complete an all-human game to claim the first spot.
-                </p>
-              ) : (
-                leaderboard.map((player, index) => (
-                  <div key={player.name} className="border-b last:border-b-0">
-                    <div className="flex items-center gap-3 py-3">
-                      <span className="w-6 text-center text-sm font-bold text-muted-foreground">
-                        {index + 1}
-                      </span>
-                      <Avatar>
+        <section className="uu-history-hero">
+          <div>
+            <Badge className="uu-history-kicker">
+              <Trophy /> Hall of Fame
+            </Badge>
+            <h1>{theme.historyHeading}</h1>
+            <p>{theme.historyDescription}</p>
+          </div>
+
+          <div className="uu-history-stats" aria-label="Hall of Fame statistics">
+            <div>
+              <span>
+                <Gamepad2 aria-hidden="true" />
+              </span>
+              <small>Completed battles</small>
+              <strong>{games.length}</strong>
+            </div>
+            <div>
+              <span>
+                <Users aria-hidden="true" />
+              </span>
+              <small>Ranked players</small>
+              <strong>{leaderboard.length}</strong>
+            </div>
+            <div>
+              <span>
+                <Crown aria-hidden="true" />
+              </span>
+              <small>Top champion</small>
+              <strong>{champion?.name ?? "Unclaimed"}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="uu-history-grid">
+          <div className="uu-history-panel uu-history-leaderboard">
+            <div className="uu-history-panel-head">
+              <div>
+                <span>Global rankings</span>
+                <h2>{theme.championsHeading}</h2>
+              </div>
+              <span className="uu-history-panel-icon" aria-hidden="true">
+                <Medal />
+              </span>
+            </div>
+
+            {leaderboard.length === 0 ? (
+              <div className="uu-history-empty">
+                <span>
+                  <Trophy aria-hidden="true" />
+                </span>
+                <strong>The throne is empty</strong>
+                <p>Complete an all-human game to claim the first spot.</p>
+                <Link to="/">Start a battle</Link>
+              </div>
+            ) : (
+              <>
+                <div className="uu-history-podium">
+                  {podium.map((player, index) => (
+                    <article
+                      key={player.name}
+                      className="uu-history-podium-player"
+                      data-rank={index + 1}
+                    >
+                      <span className="uu-history-rank">{index + 1}</span>
+                      <Avatar className="uu-history-avatar">
                         <AvatarFallback>{player.name.slice(0, 1).toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate font-semibold">{player.name}</p>
-                          {index === 0 ? <Crown className="text-amber-300" /> : null}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {player.wins} wins · {player.losses} losses
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold tabular-nums">
-                          {Math.round(player.winRate * 100)}%
-                        </p>
-                        <p className="text-xs text-muted-foreground">{player.games} games</p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <History /> Past games
-              </CardTitle>
-              <CardDescription>Newest completed games appear first.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {games.length === 0 ? (
-                <p className="py-10 text-center text-sm text-muted-foreground">
-                  No completed all-human games yet.
-                </p>
-              ) : (
-                games.map((game) => (
-                  <div key={game.gameId} className="rounded-lg border p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      {index === 0 && (
+                        <span className="uu-history-crown" aria-hidden="true">
+                          <Crown />
+                        </span>
+                      )}
+                      <strong>{player.name}</strong>
+                      <small>
+                        {player.wins} {player.wins === 1 ? "win" : "wins"} ·{" "}
+                        {Math.round(player.winRate * 100)}%
+                      </small>
                       <div>
-                        <p className="flex items-center gap-2 font-semibold">
-                          <Crown className="text-amber-300" /> {game.winnerName} won
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {game.players.map((player) => player.name).join(" · ")}
-                        </p>
+                        <span>{player.games} games</span>
+                        <span>{player.losses} losses</span>
                       </div>
-                      <Badge variant="outline">{game.turnCount} turns</Badge>
-                    </div>
-                    <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <CalendarDays /> {dateFormatter.format(game.finishedAt)}
-                    </p>
+                    </article>
+                  ))}
+                </div>
+
+                {remainingPlayers.length > 0 && (
+                  <div className="uu-history-standings">
+                    {remainingPlayers.map((player, index) => (
+                      <div key={player.name} className="uu-history-standing">
+                        <span className="uu-history-standing-rank">{index + 4}</span>
+                        <Avatar className="uu-history-standing-avatar">
+                          <AvatarFallback>{player.name.slice(0, 1).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span className="uu-history-standing-name">
+                          <strong>{player.name}</strong>
+                          <small>
+                            {player.wins} wins · {player.losses} losses
+                          </small>
+                        </span>
+                        <span className="uu-history-standing-score">
+                          <strong>{Math.round(player.winRate * 100)}%</strong>
+                          <small>{player.games} games</small>
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="uu-history-panel uu-history-matches">
+            <div className="uu-history-panel-head">
+              <div>
+                <span>Battle archive</span>
+                <h2>Recent match results</h2>
+              </div>
+              <span className="uu-history-panel-icon uu-history-panel-icon-cyan" aria-hidden="true">
+                <History />
+              </span>
+            </div>
+
+            {games.length === 0 ? (
+              <div className="uu-history-empty">
+                <span>
+                  <Swords aria-hidden="true" />
+                </span>
+                <strong>No battles recorded yet</strong>
+                <p>Games without bots will appear here after the final unicorn wins.</p>
+                <Link to="/">Gather your rivals</Link>
+              </div>
+            ) : (
+              <div className="uu-history-match-list">
+                {games.map((game, index) => (
+                  <article key={game.gameId} className="uu-history-match">
+                    <span className="uu-history-match-number">Match #{games.length - index}</span>
+                    <div className="uu-history-match-winner">
+                      <span>
+                        <Crown aria-hidden="true" />
+                      </span>
+                      <div>
+                        <small>Battle champion</small>
+                        <strong>{game.winnerName}</strong>
+                      </div>
+                    </div>
+                    <div className="uu-history-match-players">
+                      {game.players.map((player) => (
+                        <span key={player.name} data-winner={player.won}>
+                          {player.name}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="uu-history-match-meta">
+                      <span>
+                        <Zap aria-hidden="true" />
+                        {game.turnCount} turns
+                      </span>
+                      <span>
+                        <CalendarDays aria-hidden="true" />
+                        {dateFormatter.format(game.finishedAt)}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </main>
   );

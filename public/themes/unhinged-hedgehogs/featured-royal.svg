@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700">
+  <defs>
+    <linearGradient id="bg" x1="30" y1="22" x2="470" y2="678" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff8f9d"/>
+      <stop offset=".5" stop-color="#d84d92"/>
+      <stop offset="1" stop-color="#743c91"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#fff3ba"/>
+      <stop offset="1" stop-color="#fff3ba" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="500" height="700" rx="42" fill="url(#bg)"/>
+  <circle cx="250" cy="325" r="230" fill="url(#glow)" opacity=".42"/>
+  <path d="m79 469 36-84-57-48 92-23-18-94 91 30 50-83 61 74 86-42-5 96 92 13-54 78 68 63-91 25 17 94-90-28-50 83-61-73-87 43 6-97Z" fill="#4b2748"/>
+  <ellipse cx="271" cy="431" rx="151" ry="130" fill="#f4c69d"/>
+  <circle cx="324" cy="397" r="13" fill="#2b2032"/>
+  <path d="M388 438c31-1 50 12 61 31-20 19-48 24-76 13Z" fill="#2b2032"/>
+  <path d="M221 478c37 28 84 32 121 7" fill="none" stroke="#a85a55" stroke-linecap="round" stroke-width="10"/>
+  <path d="m169 319 30-111 71 71 76-74 22 114c-68-27-134-27-199 0Z" fill="#ffe16a" stroke="#fff4bc" stroke-width="8"/>
+  <circle cx="198" cy="210" r="14" fill="#5fe4d3"/><circle cx="270" cy="278" r="14" fill="#ec6b9e"/><circle cx="346" cy="207" r="14" fill="#5fe4d3"/>
+  <rect x="34" y="34" width="432" height="632" rx="30" fill="none" stroke="#fff" stroke-opacity=".78" stroke-width="8"/>
+  <text x="250" y="90" fill="#fff7cf" font-family="Arial, sans-serif" font-size="34" font-weight="900" text-anchor="middle">ROYAL RUMBLE</text>
+  <text x="250" y="632" fill="#fff7cf" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="4" text-anchor="middle">BOW TO THE SPIKES</text>
+</svg>

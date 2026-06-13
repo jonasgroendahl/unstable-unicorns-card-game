@@ -29,6 +29,36 @@ export interface Lobby {
   createdAt: number;
 }
 
+export const MATCHMAKING_SIZE = 4;
+export const MATCHMAKING_STALE_AFTER_MS = 15_000;
+const MATCHMAKING_MATCH_RETENTION_MS = 5 * 60_000;
+
+interface MatchmakingTicket {
+  id: string;
+  name: string;
+  status: "waiting" | "matched";
+  joinedAt: number;
+  updatedAt: number;
+  gameId?: string;
+  playerId?: string;
+}
+
+export interface MatchmakingStatus {
+  ticketId: string;
+  status: "waiting" | "matched" | "not_found";
+  playersWaiting: number;
+  otherPlayersWaiting: number;
+  matchSize: typeof MATCHMAKING_SIZE;
+  gameId?: string;
+  youId?: string;
+}
+
+interface MatchmakingStore {
+  tickets: Map<string, MatchmakingTicket>;
+  waiting: string[];
+  operationChain: Promise<void>;
+}
+
 interface GameRecord {
   lobby: Lobby;
   engine?: GameEngine;
@@ -43,6 +73,15 @@ export interface RegistryStore {
   byCode: Map<string, string>;
   loads: Map<string, Promise<GameRecord | undefined>>;
   persistence: GamePersistence;
+  matchmaking?: MatchmakingStore;
+}
+
+function createMatchmakingStore(): MatchmakingStore {
+  return {
+    tickets: new Map(),
+    waiting: [],
+    operationChain: Promise.resolve(),
+  };
 }
 
 export function createRegistryStore(persistence = createGamePersistence()): RegistryStore {
@@ -51,6 +90,7 @@ export function createRegistryStore(persistence = createGamePersistence()): Regi
     byCode: new Map(),
     loads: new Map(),
     persistence,
+    matchmaking: createMatchmakingStore(),
   };
 }
 
@@ -170,6 +210,60 @@ export class Registry {
 
   async getGameHistory(): Promise<GameHistoryData> {
     return buildGameHistoryData(await this.store.persistence.listResults());
+  }
+
+  async joinMatchmaking(name: string): Promise<MatchmakingStatus> {
+    const normalizedName = name.trim();
+    if (!normalizedName) throw new Error("A player name is required.");
+
+    return this.withMatchmakingLock(async (matchmaking) => {
+      const now = Date.now();
+      this.purgeMatchmaking(matchmaking, now);
+
+      let ticketId = "";
+      do {
+        ticketId = `q_${makeGameId()}`;
+      } while (matchmaking.tickets.has(ticketId));
+
+      const ticket: MatchmakingTicket = {
+        id: ticketId,
+        name: normalizedName,
+        status: "waiting",
+        joinedAt: now,
+        updatedAt: now,
+      };
+      matchmaking.tickets.set(ticketId, ticket);
+      matchmaking.waiting.push(ticketId);
+
+      try {
+        await this.createMatchFromQueue(matchmaking);
+      } catch (error) {
+        matchmaking.tickets.delete(ticketId);
+        matchmaking.waiting = matchmaking.waiting.filter((id) => id !== ticketId);
+        throw error;
+      }
+      return this.matchmakingStatus(matchmaking, ticketId);
+    });
+  }
+
+  async getMatchmakingStatus(ticketId: string): Promise<MatchmakingStatus> {
+    return this.withMatchmakingLock((matchmaking) => {
+      const now = Date.now();
+      this.purgeMatchmaking(matchmaking, now);
+
+      const ticket = matchmaking.tickets.get(ticketId);
+      if (ticket?.status === "waiting") ticket.updatedAt = now;
+      return this.matchmakingStatus(matchmaking, ticketId);
+    });
+  }
+
+  async leaveMatchmaking(ticketId: string): Promise<MatchmakingStatus> {
+    return this.withMatchmakingLock((matchmaking) => {
+      const ticket = matchmaking.tickets.get(ticketId);
+      if (ticket?.status === "waiting") matchmaking.tickets.delete(ticketId);
+      matchmaking.waiting = matchmaking.waiting.filter((id) => id !== ticketId);
+      return this.matchmakingStatus(matchmaking, ticketId);
+    });
   }
 
   subscribe(gameId: string, connId: string, fn: (state: GameState) => void): () => void {
@@ -327,6 +421,100 @@ export class Registry {
       startedAt: game.lobby.createdAt,
       finishedAt: Date.now(),
     };
+  }
+
+  private matchmakingStore(): MatchmakingStore {
+    return (this.store.matchmaking ??= createMatchmakingStore());
+  }
+
+  private async withMatchmakingLock<T>(
+    operation: (matchmaking: MatchmakingStore) => T | Promise<T>,
+  ): Promise<T> {
+    const matchmaking = this.matchmakingStore();
+    const result = matchmaking.operationChain.then(
+      () => operation(matchmaking),
+      () => operation(matchmaking),
+    );
+    matchmaking.operationChain = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }
+
+  private purgeMatchmaking(matchmaking: MatchmakingStore, now: number): void {
+    for (const [ticketId, ticket] of matchmaking.tickets) {
+      const maxAge =
+        ticket.status === "waiting" ? MATCHMAKING_STALE_AFTER_MS : MATCHMAKING_MATCH_RETENTION_MS;
+      if (now - ticket.updatedAt > maxAge) matchmaking.tickets.delete(ticketId);
+    }
+    matchmaking.waiting = matchmaking.waiting.filter((id) => {
+      const ticket = matchmaking.tickets.get(id);
+      return ticket?.status === "waiting";
+    });
+  }
+
+  private matchmakingStatus(matchmaking: MatchmakingStore, ticketId: string): MatchmakingStatus {
+    const ticket = matchmaking.tickets.get(ticketId);
+    const playersWaiting = matchmaking.waiting.length;
+    if (!ticket) {
+      return {
+        ticketId,
+        status: "not_found",
+        playersWaiting,
+        otherPlayersWaiting: playersWaiting,
+        matchSize: MATCHMAKING_SIZE,
+      };
+    }
+
+    return {
+      ticketId,
+      status: ticket.status,
+      playersWaiting,
+      otherPlayersWaiting:
+        ticket.status === "waiting" ? Math.max(0, playersWaiting - 1) : playersWaiting,
+      matchSize: MATCHMAKING_SIZE,
+      gameId: ticket.gameId,
+      youId: ticket.playerId,
+    };
+  }
+
+  private async createMatchFromQueue(matchmaking: MatchmakingStore): Promise<void> {
+    if (matchmaking.waiting.length < MATCHMAKING_SIZE) return;
+
+    const ticketIds = matchmaking.waiting.splice(0, MATCHMAKING_SIZE);
+    const tickets = ticketIds
+      .map((ticketId) => matchmaking.tickets.get(ticketId))
+      .filter((ticket): ticket is MatchmakingTicket => ticket?.status === "waiting");
+
+    if (tickets.length !== MATCHMAKING_SIZE) {
+      matchmaking.waiting.unshift(...tickets.map((ticket) => ticket.id));
+      return;
+    }
+
+    try {
+      const lobby = await this.createLobby(tickets[0].name);
+      const seats: LobbySeat[] = [lobby.seats[0]];
+      for (const ticket of tickets.slice(1)) {
+        const seat = await this.joinLobby(lobby.gameId, ticket.name);
+        if (!seat) throw new Error("Could not seat a matchmaking player.");
+        seats.push(seat);
+      }
+      if (!(await this.startGame(lobby.gameId))) {
+        throw new Error("Could not start the matchmaking game.");
+      }
+
+      const now = Date.now();
+      tickets.forEach((ticket, index) => {
+        ticket.status = "matched";
+        ticket.updatedAt = now;
+        ticket.gameId = lobby.gameId;
+        ticket.playerId = seats[index].id;
+      });
+    } catch (error) {
+      matchmaking.waiting.unshift(...tickets.map((ticket) => ticket.id));
+      throw error;
+    }
   }
 }
 
