@@ -81,20 +81,20 @@ export const GAME_THEMES: Record<GameThemeId, GameTheme> = {
     featuredArtLabel: "Featured hedgehog crew",
     featuredArt: [
       {
-        src: "/themes/unhinged-hedgehogs/featured-scout.svg",
-        alt: "A bold hedgehog scout",
+        src: "/themes/unhinged-hedgehogs/cards/stabby-the-unicorn.svg",
+        alt: "Pointy Pete",
       },
       {
-        src: "/themes/unhinged-hedgehogs/featured-oracle.svg",
-        alt: "A mysterious hedgehog oracle",
+        src: "/themes/unhinged-hedgehogs/cards/rainbow-unicorn.svg",
+        alt: "Prism Prickles",
       },
       {
-        src: "/themes/unhinged-hedgehogs/featured-rogue.svg",
-        alt: "A mischievous hedgehog rogue",
+        src: "/themes/unhinged-hedgehogs/cards/blatant-thievery.svg",
+        alt: "Brazen Burglary",
       },
       {
-        src: "/themes/unhinged-hedgehogs/featured-royal.svg",
-        alt: "A royal hedgehog commander",
+        src: "/themes/unhinged-hedgehogs/cards/queen-bee-unicorn.svg",
+        alt: "Queen Bristle",
       },
     ],
     firstSticker: "Cuddly?",

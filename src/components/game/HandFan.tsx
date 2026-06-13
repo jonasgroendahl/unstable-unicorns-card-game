@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Hand, Play } from "lucide-react";
 import { Button } from "#/components/ui/button.tsx";
+import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
+import { getCardPresentation } from "#/game/themes/cardPresentation.ts";
 import { cn } from "#/lib/utils.ts";
 import { CardView } from "./CardView.tsx";
 import type { CardView as CardViewData } from "#/game/view.ts";
@@ -23,6 +25,7 @@ export function HandFan({
   reasonFor,
   onPlay,
 }: HandFanProps) {
+  const { themeId } = useGameTheme();
   const [activeIndex, setActiveIndex] = useState(() =>
     Math.max(
       0,
@@ -34,6 +37,7 @@ export function HandFan({
   const n = cards.length;
   const autoDrawnIndex = cards.findIndex((card) => card.instanceId === autoDrawnCardId);
   const activeCard = cards[Math.min(activeIndex, Math.max(0, cards.length - 1))];
+  const activePresentation = activeCard ? getCardPresentation(themeId, activeCard) : null;
   const activePlayable =
     Boolean(activeCard) && canPlay && (isPlayable ? isPlayable(activeCard) : true);
   const activeReason = activeCard ? reasonFor?.(activeCard) : undefined;
@@ -83,6 +87,7 @@ export function HandFan({
     <>
       <div className="uu-hand uu-desktop-hand relative">
         {cards.map((card, i) => {
+          const presentation = getCardPresentation(themeId, card);
           // Gentle arc: rotate cards outward from center.
           const mid = (n - 1) / 2;
           const offset = i - mid;
@@ -103,7 +108,11 @@ export function HandFan({
                 disabled={!playable}
                 autoDrawn={card.instanceId === autoDrawnCardId}
                 onClick={playable && onPlay ? () => onPlay(card) : undefined}
-                title={reason ? `${card.name} — ${reason}` : `${card.name}\n\n${card.text}`}
+                title={
+                  reason
+                    ? `${presentation.name} — ${reason}`
+                    : `${presentation.name}\n\n${card.text}`
+                }
               />
             </div>
           );
@@ -116,7 +125,7 @@ export function HandFan({
           <Hand className="size-4 text-amber-200" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-xs font-bold text-amber-100">
-              {activeCard?.name ?? "Your hand is empty"}
+              {activePresentation?.name ?? "Your hand is empty"}
             </div>
             <div className="truncate text-[10px] text-white/50">
               {activeCard
@@ -149,6 +158,7 @@ export function HandFan({
         <div ref={mobileRailRef} className="uu-mobile-hand-rail" onScroll={updateActiveFromScroll}>
           {cards.map((card, index) => {
             const playable = canPlay && (isPlayable ? isPlayable(card) : true);
+            const presentation = getCardPresentation(themeId, card);
             return (
               <div key={card.instanceId} data-hand-index={index} className="uu-mobile-hand-card">
                 <CardView
@@ -159,7 +169,7 @@ export function HandFan({
                   selected={index === activeIndex}
                   autoDrawn={card.instanceId === autoDrawnCardId}
                   onClick={() => scrollToCard(index)}
-                  title={`${card.name}\n\n${card.text}`}
+                  title={`${presentation.name}\n\n${card.text}`}
                 />
               </div>
             );

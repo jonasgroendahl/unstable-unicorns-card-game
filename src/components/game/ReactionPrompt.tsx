@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Ban, Eye, Hand, Sparkles } from "lucide-react";
 import { Badge } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
+import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
+import { getCardPresentation } from "#/game/themes/cardPresentation.ts";
 import { CardView } from "./CardView.tsx";
 import { audio } from "#/lib/audio.ts";
 import { REACTION_WINDOW_MS } from "#/game/types.ts";
@@ -15,6 +17,7 @@ interface ReactionPromptProps {
 }
 
 export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: ReactionPromptProps) {
+  const { themeId } = useGameTheme();
   const [remaining, setRemaining] = useState(reaction.closesAt - Date.now());
 
   useEffect(() => {
@@ -35,6 +38,9 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
   const latestNeigh = reaction.chain.at(-1);
   const isCounterNeigh = Boolean(latestNeigh);
   const wouldCancel = reaction.chain.length % 2 === 1;
+  const targetName = reaction.targetCard
+    ? getCardPresentation(themeId, reaction.targetCard).name
+    : "A card";
 
   return (
     <section
@@ -57,7 +63,7 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
                 {isCounterNeigh ? "Counter-Neigh window" : "Neigh window"}
               </Badge>
               <span className="truncate text-sm font-bold text-amber-100">
-                {reaction.targetCard?.name ?? "A card"} by {playerName(reaction.targetByPlayer)}
+                {targetName} by {playerName(reaction.targetByPlayer)}
               </span>
             </div>
             <p className="mt-1 hidden items-center gap-1.5 text-[11px] text-white/55 sm:flex">
@@ -101,7 +107,7 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
           <div className="mb-2 flex flex-wrap items-center justify-center gap-1.5 text-xs">
             {reaction.chain.map((link) => (
               <Badge key={link.card.instanceId} variant="secondary">
-                {playerName(link.byPlayer)}: {link.card.name}
+                {playerName(link.byPlayer)}: {getCardPresentation(themeId, link.card).name}
               </Badge>
             ))}
             <Badge variant={wouldCancel ? "destructive" : "outline"}>
@@ -119,8 +125,8 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
                 </div>
                 <div className="text-[10px] text-white/45">
                   {latestNeigh
-                    ? `Play a Neigh on ${playerName(latestNeigh.byPlayer)}'s ${latestNeigh.card.name}, or pass.`
-                    : "Play a Neigh card or pass."}
+                    ? `Play an interruption on ${playerName(latestNeigh.byPlayer)}'s ${getCardPresentation(themeId, latestNeigh.card).name}, or pass.`
+                    : "Play an interruption card or pass."}
                 </div>
               </div>
               <Button variant="secondary" size="sm" onClick={onPass}>
@@ -135,7 +141,7 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
                   size="sm"
                   playable
                   onClick={() => onNeigh(c.instanceId)}
-                  title={`Play ${c.name}`}
+                  title={`Play ${getCardPresentation(themeId, c).name}`}
                 />
               ))}
             </div>
@@ -163,6 +169,9 @@ function NeighReveal({
   player: string;
   wouldCancel: boolean;
 }) {
+  const { themeId } = useGameTheme();
+  const presentation = getCardPresentation(themeId, card);
+
   return (
     <div className="uu-neigh-scene my-3 flex items-center justify-center gap-4 rounded-xl border border-amber-200/20 bg-black/25 px-4 py-2.5">
       <div className="uu-neigh-flip-stage">
@@ -171,17 +180,22 @@ function NeighReveal({
             <Sparkles className="size-4 text-amber-200/80" />
           </div>
           <div className="uu-neigh-flip-face uu-neigh-flip-front">
-            <img src={card.image} alt={card.name} draggable={false} />
+            <CardView
+              card={card}
+              size="xs"
+              previewOnly
+              className="size-full w-full rounded-none border-0 shadow-none"
+            />
           </div>
         </div>
       </div>
       <div className="uu-neigh-reveal-copy min-w-0" role="status" aria-live="assertive">
         <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200/70">
-          Neigh played
+          Interruption played
         </div>
         <div className="uu-display truncate text-lg font-bold text-amber-100">{player}</div>
         <div className="text-xs text-white/65">
-          revealed <strong className="text-white">{card.name}</strong>.{" "}
+          revealed <strong className="text-white">{presentation.name}</strong>.{" "}
           {wouldCancel ? "The original card is now cancelled." : "The original card can resolve."}
         </div>
       </div>

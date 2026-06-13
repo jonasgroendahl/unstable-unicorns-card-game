@@ -1,17 +1,10 @@
 import { Sparkles } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "#/components/ui/hover-card.tsx";
+import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
+import { getCardKindLabel, getCardPresentation } from "#/game/themes/cardPresentation.ts";
 import { cn } from "#/lib/utils.ts";
 import type { CardView as CardViewData } from "#/game/view.ts";
-
-const KIND_LABEL: Record<string, string> = {
-  baby: "Baby Unicorn",
-  basic: "Basic Unicorn",
-  magical: "Magical Unicorn",
-  magic: "Magic",
-  upgrade: "Upgrade",
-  downgrade: "Downgrade",
-  instant: "Instant",
-};
+import { HedgehogCardFace } from "./HedgehogCardFace.tsx";
 
 export type CardSize = "xs" | "sm" | "md" | "lg";
 
@@ -51,7 +44,22 @@ export function CardView({
   onClick,
   title,
 }: CardViewProps) {
-  const cardTitle = title ?? `${card.name} — ${KIND_LABEL[card.kind] ?? card.kind}`;
+  const { themeId } = useGameTheme();
+  const presentation = getCardPresentation(themeId, card);
+  const presentedCard = { ...card, ...presentation };
+  const kindLabel = getCardKindLabel(themeId, card.kind);
+  const cardTitle = title ?? `${presentedCard.name} — ${kindLabel}`;
+  const cardFace =
+    themeId === "unhinged-hedgehogs" ? (
+      <HedgehogCardFace card={presentedCard} />
+    ) : (
+      <img
+        src={presentedCard.image}
+        alt={previewOnly ? "" : presentedCard.name}
+        loading="lazy"
+        draggable={false}
+      />
+    );
 
   const cardElement = (
     <div
@@ -74,7 +82,7 @@ export function CardView({
         onClick();
       }}
     >
-      <img src={card.image} alt={previewOnly ? "" : card.name} loading="lazy" draggable={false} />
+      {cardFace}
       {autoDrawn && (
         <span className="uu-auto-drawn-label">
           <Sparkles className="size-3" />
@@ -100,22 +108,26 @@ export function CardView({
         className="uu-card-preview grid w-[min(29rem,calc(100vw-2rem))] grid-cols-[minmax(0,1fr)] gap-4 rounded-2xl border-white/20 bg-[#160d2c]/95 p-3 text-white shadow-2xl backdrop-blur-xl duration-200 sm:grid-cols-[14rem_minmax(0,1fr)]"
       >
         <div className="uu-card-preview-image aspect-[5/7] overflow-hidden rounded-xl">
-          <img
-            src={card.image}
-            alt=""
-            className="size-full object-cover"
-            loading="eager"
-            draggable={false}
-          />
+          {themeId === "unhinged-hedgehogs" ? (
+            <HedgehogCardFace card={presentedCard} />
+          ) : (
+            <img
+              src={presentedCard.image}
+              alt=""
+              className="size-full object-cover"
+              loading="eager"
+              draggable={false}
+            />
+          )}
         </div>
         <div className="flex min-w-0 flex-col justify-center gap-3 p-1">
           <div>
             <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-200/75">
               <Sparkles className="size-3" />
-              {KIND_LABEL[card.kind] ?? card.kind}
+              {kindLabel}
             </div>
             <h3 className="uu-display text-xl font-bold leading-tight text-amber-100">
-              {card.name}
+              {presentedCard.name}
             </h3>
           </div>
           <p className="text-sm leading-relaxed text-white/80">{card.text}</p>

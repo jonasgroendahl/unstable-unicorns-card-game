@@ -11,7 +11,9 @@ import {
 } from "#/components/ui/dialog.tsx";
 import { Input } from "#/components/ui/input.tsx";
 import { ToggleGroup, ToggleGroupItem } from "#/components/ui/toggle-group.tsx";
+import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
 import { DECK_OPTIONS, DECKS, definitionsForDeck, type DeckId } from "#/game/decks.ts";
+import { getCardKindLabel, getCardPresentation } from "#/game/themes/cardPresentation.ts";
 import { CardView } from "./CardView.tsx";
 
 const CARD_GROUPS = [
@@ -33,18 +35,21 @@ export function DeckPicker({
   onChange?: (deckId: DeckId) => void;
   disabled?: boolean;
 }) {
+  const { themeId } = useGameTheme();
   const [previewDeckId, setPreviewDeckId] = useState<DeckId | null>(null);
   const [query, setQuery] = useState("");
   const previewCards = useMemo(() => {
     if (!previewDeckId) return [];
     const normalized = query.trim().toLowerCase();
-    return definitionsForDeck(previewDeckId).filter(
-      (card) =>
+    return definitionsForDeck(previewDeckId).filter((card) => {
+      const presentation = getCardPresentation(themeId, card);
+      return (
         !normalized ||
-        card.name.toLowerCase().includes(normalized) ||
-        card.text.toLowerCase().includes(normalized),
-    );
-  }, [previewDeckId, query]);
+        presentation.name.toLowerCase().includes(normalized) ||
+        card.text.toLowerCase().includes(normalized)
+      );
+    });
+  }, [previewDeckId, query, themeId]);
 
   return (
     <div className="uu-deck-picker flex flex-col gap-2">
@@ -113,41 +118,44 @@ export function DeckPicker({
           />
           <div className="min-h-0 flex-1 overflow-y-auto pr-2">
             <div className="flex flex-col gap-7 pb-2">
-              {CARD_GROUPS.map(([kind, label]) => {
+              {CARD_GROUPS.map(([kind]) => {
                 const cards = previewCards.filter((card) => card.kind === kind);
                 if (cards.length === 0) return null;
                 return (
                   <section key={kind} className="flex flex-col gap-3">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{label}</h3>
+                      <h3 className="font-semibold">{getCardKindLabel(themeId, kind)}s</h3>
                       <Badge variant="secondary">
                         {cards.reduce((total, card) => total + card.copies, 0)} cards
                       </Badge>
                     </div>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                      {cards.map((card) => (
-                        <div key={card.id} className="flex min-w-0 flex-col items-center gap-2">
-                          <CardView
-                            card={{
-                              instanceId: `preview-${card.id}`,
-                              slug: card.id,
-                              name: card.name,
-                              kind: card.kind,
-                              cardClass: card.cardClass,
-                              text: card.text,
-                              image: card.image,
-                              ownerId: null,
-                            }}
-                            size="sm"
-                          />
-                          <div className="flex min-w-0 items-center justify-center gap-1">
-                            <span className="truncate text-center text-xs font-medium">
-                              {card.name}
-                            </span>
-                            {card.copies > 1 && <Badge variant="outline">x{card.copies}</Badge>}
+                      {cards.map((card) => {
+                        const presentation = getCardPresentation(themeId, card);
+                        return (
+                          <div key={card.id} className="flex min-w-0 flex-col items-center gap-2">
+                            <CardView
+                              card={{
+                                instanceId: `preview-${card.id}`,
+                                slug: card.id,
+                                name: card.name,
+                                kind: card.kind,
+                                cardClass: card.cardClass,
+                                text: card.text,
+                                image: card.image,
+                                ownerId: null,
+                              }}
+                              size="sm"
+                            />
+                            <div className="flex min-w-0 items-center justify-center gap-1">
+                              <span className="truncate text-center text-xs font-medium">
+                                {presentation.name}
+                              </span>
+                              {card.copies > 1 && <Badge variant="outline">x{card.copies}</Badge>}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </section>
                 );
