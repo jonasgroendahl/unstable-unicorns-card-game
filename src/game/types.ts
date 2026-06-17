@@ -13,7 +13,7 @@ export type PlayerId = string;
 export type InstanceId = string;
 export type DefId = string; // === card slug
 
-export type Zone = "deck" | "hand" | "stable" | "discard" | "nursery";
+export type Zone = "deck" | "hand" | "stable" | "discard" | "nursery" | "resolving";
 
 export type Phase = "beginning" | "draw" | "action" | "end";
 
@@ -202,6 +202,8 @@ export interface GameState {
   deck: InstanceId[];
   discard: InstanceId[];
   nursery: InstanceId[];
+  /** Played one-shot cards while their effects are resolving. */
+  resolving: InstanceId[];
   hands: Record<PlayerId, InstanceId[]>;
   stables: Record<PlayerId, InstanceId[]>;
 

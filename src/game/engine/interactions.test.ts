@@ -93,6 +93,50 @@ describe("Change of Luck grants an extra turn", () => {
     // After Change of Luck resolves and the turn ends, it should be p1 again.
     expect(h.engine.currentPlayerId()).toBe("p1");
   });
+
+  it("does not offer the played Magic card as one of its discard choices", async () => {
+    const h = new Harness();
+    await h.start();
+    h.clearHand("p1");
+    const col = h.giveCard("p1", "change-of-luck");
+    let sawDiscardChoice = false;
+    h.setDecide((d) => {
+      if (d.kind === "chooseInstance" && d.prompt.startsWith("Discard")) {
+        sawDiscardChoice = true;
+        expect(d.options).not.toContain(col);
+        return d.options.slice(0, d.minMax?.[0] ?? 1);
+      }
+      return true;
+    });
+
+    await h.play("p1", col);
+
+    expect(sawDiscardChoice).toBe(true);
+    expect(h.state.instances[col].zone).toBe("discard");
+  });
+});
+
+describe("Good Deal", () => {
+  it("does not offer the played Magic card as its discard choice", async () => {
+    const h = new Harness();
+    await h.start();
+    h.clearHand("p1");
+    const goodDeal = h.giveCard("p1", "good-deal");
+    let sawDiscardChoice = false;
+    h.setDecide((d) => {
+      if (d.kind === "chooseInstance" && d.prompt.startsWith("Discard")) {
+        sawDiscardChoice = true;
+        expect(d.options).not.toContain(goodDeal);
+        return d.options[0] ?? null;
+      }
+      return true;
+    });
+
+    await h.play("p1", goodDeal);
+
+    expect(sawDiscardChoice).toBe(true);
+    expect(h.state.instances[goodDeal].zone).toBe("discard");
+  });
 });
 
 describe("deck reshuffle on empty", () => {

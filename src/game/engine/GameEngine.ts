@@ -65,6 +65,7 @@ export class GameEngine {
 
   constructor(state: GameState) {
     this.state = state;
+    this.state.resolving ??= [];
     this.logSeq = state.log.reduce((highest, event) => Math.max(highest, event.t), 0);
   }
 
@@ -346,6 +347,8 @@ export class GameEngine {
         return this.state.discard;
       case "nursery":
         return this.state.nursery;
+      case "resolving":
+        return (this.state.resolving ??= []);
       case "hand":
         return this.state.hands[ownerId!];
       case "stable":
@@ -933,10 +936,11 @@ export class GameEngine {
         break;
       }
       case "magic": {
+        this.relocateCard(inst.instanceId, null, "resolving");
         const ctx = this.makeContext(playerId);
         if (def.play) await def.play(ctx, inst);
-        // Magic cards go to discard after resolving (if not already moved).
-        if (this.state.instances[inst.instanceId].zone === "hand") {
+        // Magic cards go to discard after resolving unless the effect moved the source.
+        if (this.state.instances[inst.instanceId].zone === "resolving") {
           this.relocateCard(inst.instanceId, null, "discard");
         }
         break;
@@ -1030,6 +1034,7 @@ export class GameEngine {
     this.state.deck = snapshot.deck;
     this.state.discard = snapshot.discard;
     this.state.nursery = snapshot.nursery;
+    this.state.resolving = snapshot.resolving ?? [];
     this.state.hands = snapshot.hands;
     this.state.stables = snapshot.stables;
     this.state.actionsRemaining = snapshot.actionsRemaining;

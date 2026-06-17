@@ -80,6 +80,7 @@ export function createInitialState(
     deck: deckShuffle.result,
     discard: [],
     nursery: babyShuffle.result,
+    resolving: [],
     hands: Object.fromEntries(players.map((p) => [p.id, []])),
     stables: Object.fromEntries(players.map((p) => [p.id, []])),
     turnIndex: 0,
@@ -146,6 +147,8 @@ export function zoneList(state: GameState, zone: Zone, ownerId?: PlayerId): Inst
       return state.discard;
     case "nursery":
       return state.nursery;
+    case "resolving":
+      return (state.resolving ??= []);
     case "hand":
       return state.hands[ownerId!];
     case "stable":
