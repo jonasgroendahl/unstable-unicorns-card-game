@@ -2104,6 +2104,51 @@ a {
   color: #a66de4;
 }
 
+.uu-home-support-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #d9cdea;
+}
+
+.uu-home-support-row p {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  flex-direction: column;
+  gap: 0.12rem;
+  color: #7d6a96;
+  font-size: 0.62rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.uu-home-support-row strong {
+  color: #4b2d72;
+  font-size: 0.7rem;
+  font-weight: 1000;
+  letter-spacing: -0.01em;
+}
+
+.uu-home-support-button {
+  flex: 0 0 auto;
+  border: 2px solid #e7d9a6;
+  border-radius: 0.85rem;
+  color: #3a2a0f;
+  background: #fff1a8;
+  box-shadow: 0 3px 0 #d8bb54;
+  font-size: 0.68rem;
+  font-weight: 1000;
+}
+
+.uu-home-support-button:hover {
+  color: #2a1c08;
+  background: #fff5bf;
+  transform: translateY(-1px);
+}
+
 .uu-home-queue {
   display: grid;
   min-height: 5rem;
@@ -4332,6 +4377,14 @@ html[data-game-theme="unhinged-hedgehogs"] .uu-root {
 
   .uu-home-menu-note,
   .uu-home-footer p {
+    display: none;
+  }
+
+  .uu-home-support-row {
+    padding-top: 0.65rem;
+  }
+
+  .uu-home-support-row p span {
     display: none;
   }
 

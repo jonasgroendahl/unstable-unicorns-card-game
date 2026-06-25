@@ -78,6 +78,12 @@ vp run db:migrate
 Without `DATABASE_URL`, development and tests fall back to process memory and
 print a warning. Never expose `DATABASE_URL` through a `VITE_` variable.
 
+## Optional support link
+
+Set `VITE_PAYPAL_DONATE_URL` to a PayPal.Me link or a PayPal-hosted donation
+link to show a small "Tip" action on the home screen and a "Support" link in
+the footer.
+
 ## Card data
 
 Card text and art were scraped from the community wiki + unicornsdatabase and

@@ -3,8 +3,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
   Bolt,
+  Coffee,
   Crown,
   Gamepad2,
+  Github,
+  ExternalLink,
   History,
   LogIn,
   Mail,
@@ -13,13 +16,12 @@ import {
   Sparkles,
   Swords,
   Users,
-  Github,
-  ExternalLink,
 } from "lucide-react";
 import { Button } from "#/components/ui/button.tsx";
 import { Badge } from "#/components/ui/badge.tsx";
 import { GameThemeSelect } from "#/components/theme/GameThemeSelect.tsx";
 import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
+import { env } from "#/env.ts";
 import { audio } from "#/lib/audio.ts";
 import {
   createLobby,
@@ -37,6 +39,7 @@ import type { MatchmakingStatus } from "#/server/registry.ts";
 export const Route = createFileRoute("/")({ component: Home });
 
 const MATCHMAKING_TICKET_KEY = "uu.matchmaking.ticket";
+const PAYPAL_DONATE_URL = env.VITE_PAYPAL_DONATE_URL;
 const FEATURE_CARD_CLASSES = [
   "uu-home-card-one",
   "uu-home-card-two",
@@ -365,6 +368,20 @@ function Home() {
               <Sparkles aria-hidden="true" />
               Choose your deck and add bots after creating a room.
             </p>
+
+            {PAYPAL_DONATE_URL ? (
+              <div className="uu-home-support-row">
+                <p>
+                  <strong>Enjoying the chaos?</strong>
+                  <span>Optional tiny tips help keep the table open.</span>
+                </p>
+                <Button className="uu-home-support-button" variant="outline" size="sm" asChild>
+                  <a href={PAYPAL_DONATE_URL} target="_blank" rel="noreferrer">
+                    <Coffee data-icon="inline-start" /> Tip
+                  </a>
+                </Button>
+              </div>
+            ) : null}
           </aside>
         </section>
 
@@ -381,6 +398,11 @@ function Home() {
             <a href="mailto:jonas.groendahlxd@gmail.com">
               <Mail aria-hidden="true" /> Business
             </a>
+            {PAYPAL_DONATE_URL ? (
+              <a href={PAYPAL_DONATE_URL} target="_blank" rel="noreferrer">
+                <Coffee aria-hidden="true" /> Support
+              </a>
+            ) : null}
             <a href="https://byggegrundesiden.dk" target="_blank" rel="noreferrer">
               More projects <ExternalLink aria-hidden="true" />
             </a>
