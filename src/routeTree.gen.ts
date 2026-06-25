@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as DebugUiRouteImport } from './routes/debug-ui'
 import { Route as DebugRouteImport } from './routes/debug'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlayGameIdRouteImport } from './routes/play.$gameId'
@@ -19,6 +20,11 @@ import { Route as ApiStreamGameIdRouteImport } from './routes/api/stream.$gameId
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugUiRoute = DebugUiRouteImport.update({
+  id: '/debug-ui',
+  path: '/debug-ui',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DebugRoute = DebugRouteImport.update({
@@ -50,6 +56,7 @@ const ApiStreamGameIdRoute = ApiStreamGameIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/debug': typeof DebugRoute
+  '/debug-ui': typeof DebugUiRoute
   '/history': typeof HistoryRoute
   '/lobby/$gameId': typeof LobbyGameIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/debug': typeof DebugRoute
+  '/debug-ui': typeof DebugUiRoute
   '/history': typeof HistoryRoute
   '/lobby/$gameId': typeof LobbyGameIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/debug': typeof DebugRoute
+  '/debug-ui': typeof DebugUiRoute
   '/history': typeof HistoryRoute
   '/lobby/$gameId': typeof LobbyGameIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/debug'
+    | '/debug-ui'
     | '/history'
     | '/lobby/$gameId'
     | '/play/$gameId'
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/debug'
+    | '/debug-ui'
     | '/history'
     | '/lobby/$gameId'
     | '/play/$gameId'
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/debug'
+    | '/debug-ui'
     | '/history'
     | '/lobby/$gameId'
     | '/play/$gameId'
@@ -102,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DebugRoute: typeof DebugRoute
+  DebugUiRoute: typeof DebugUiRoute
   HistoryRoute: typeof HistoryRoute
   LobbyGameIdRoute: typeof LobbyGameIdRoute
   PlayGameIdRoute: typeof PlayGameIdRoute
@@ -115,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug-ui': {
+      id: '/debug-ui'
+      path: '/debug-ui'
+      fullPath: '/debug-ui'
+      preLoaderRoute: typeof DebugUiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/debug': {
@@ -158,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DebugRoute: DebugRoute,
+  DebugUiRoute: DebugUiRoute,
   HistoryRoute: HistoryRoute,
   LobbyGameIdRoute: LobbyGameIdRoute,
   PlayGameIdRoute: PlayGameIdRoute,

@@ -840,6 +840,10 @@ a {
 }
 .uu-desktop-hand {
   display: none;
+  /* Drop the fan's bottom edge below the viewport so it reads like a hand of
+     cards you're holding — and reclaim that overlap as vertical space. */
+  padding-bottom: 0;
+  margin-bottom: -3.25rem;
 }
 .uu-hand-card {
   transform-origin: bottom center;
@@ -940,7 +944,7 @@ a {
   gap: 0.75rem;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
-  padding: 5px calc(50% - 4rem) 8px;
+  padding: 1rem calc(50% - 4rem) 0.85rem;
   scroll-padding-inline: calc(50% - 4rem);
   scroll-snap-type: x mandatory;
   touch-action: pan-x;
@@ -1384,12 +1388,6 @@ a {
 
 .uu-game-footer {
   color: white;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(255, 216, 77, 0.12), transparent 60%),
-    rgba(28, 15, 67, 0.46);
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 -16px 34px rgba(31, 14, 70, 0.24);
-  backdrop-filter: blur(16px);
 }
 
 /* --- Home / main menu ---------------------------------------------- */

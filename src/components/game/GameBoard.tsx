@@ -161,12 +161,12 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
       />
     ));
 
-  const viewerStable = (mobile: boolean) => (
+  const viewerStable = () => (
     <PlayerStable
       player={me}
       winThreshold={view.winThreshold}
       cardSize="sm"
-      scrollCards={mobile}
+      scrollCards
       targetableIds={boardTargetIds ?? undefined}
       selectedIds={selectedMulti}
       onCardClick={onBoardCardClick}
@@ -177,21 +177,28 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
     />
   );
 
-  const piles = (
-    <div className="flex items-end justify-center gap-2 sm:gap-4">
-      <Pile label="Deck" count={view.deckCount}>
-        <CardBack size="md" count={view.deckCount} />
-      </Pile>
-      <Pile label="Discard" count={view.discardCount}>
-        {view.discardTop ? <CardView card={view.discardTop} size="md" /> : <EmptyPile />}
-      </Pile>
-      <Pile label="Nursery" count={view.nurseryCount}>
-        <div className="uu-card uu-cardback w-24 aspect-[5/7]">
-          <Sparkles className="size-5 text-pink-200/70" />
-        </div>
-      </Pile>
-    </div>
-  );
+  const piles = (size: "sm" | "md") => {
+    const w = size === "md" ? "w-24" : "w-16";
+    return (
+      <div className="flex items-end justify-center gap-2 sm:gap-3">
+        <Pile label="Deck" count={view.deckCount}>
+          <CardBack size={size} count={view.deckCount} />
+        </Pile>
+        <Pile label="Discard" count={view.discardCount}>
+          {view.discardTop ? (
+            <CardView card={view.discardTop} size={size} />
+          ) : (
+            <EmptyPile width={w} />
+          )}
+        </Pile>
+        <Pile label="Nursery" count={view.nurseryCount}>
+          <div className={`uu-card uu-cardback aspect-[5/7] ${w}`}>
+            <Sparkles className="size-5 text-pink-200/70" />
+          </div>
+        </Pile>
+      </div>
+    );
+  };
 
   const drawDisabled =
     !isMyTurn || view.phase !== "action" || view.playedThisTurn || !!decision || !!view.reaction;
@@ -231,7 +238,7 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
           <img src={theme.mark} alt="" className="mr-1 inline size-3.5 rounded-sm" />
           {theme.shortName}
         </span>
-        <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] sm:py-0.5 sm:text-xs">
+        <span className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-2 py-1 text-[10px] sm:py-0.5 sm:text-xs">
           Turn {view.turnNumber} · {playName(view.currentPlayerId)}
           {isMyTurn ? " · you" : ""}
         </span>
@@ -269,13 +276,13 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
         </div>
 
         <section className="py-5" aria-label="Card piles">
-          {piles}
+          {piles("md")}
         </section>
 
         <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-white/55">
           Your stable
         </div>
-        {viewerStable(true)}
+        {viewerStable()}
 
         <div className="mt-3">
           <GameLog log={view.log} />
@@ -299,10 +306,10 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
         <div className="uu-desktop-opponents-rail">{opponentStables(false, true)}</div>
       </section>
 
-      {/* desktop center: deck / discard / nursery */}
-      <div className="relative z-10 hidden flex-1 items-center justify-center px-3 sm:flex">
-        {piles}
-
+      {/* desktop center: only the game log lives here now (docked right). With no
+          in-flow content this row collapses to zero height when the board gets
+          crowded, handing the reclaimed vertical space to the stable + hand. */}
+      <div className="relative z-10 hidden min-h-0 flex-1 px-3 sm:block">
         <aside className="absolute inset-y-0 right-3 hidden w-72 items-center lg:flex">
           <GameLog log={view.log} />
         </aside>
@@ -310,9 +317,12 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
 
       {/* viewer stable + hand */}
       <footer className="uu-game-footer relative z-20 shrink-0 px-3 pb-2">
-        <div className="mb-2 hidden items-end justify-center gap-3 sm:flex">
-          <div className="flex-1 max-w-[640px]">{viewerStable(false)}</div>
-          {turnActions(false)}
+        {/* Equal-width side columns (piles left, turn actions right) keep the
+            stable centered on the screen rather than between them. */}
+        <div className="mb-2 hidden items-end gap-3 sm:flex">
+          <div className="flex flex-1 basis-0 justify-start">{piles("sm")}</div>
+          <div className="min-w-0 max-w-[640px] flex-[0_1_640px]">{viewerStable()}</div>
+          <div className="flex flex-1 basis-0 justify-end">{turnActions(false)}</div>
         </div>
 
         <div className="mb-1.5 sm:hidden">
@@ -456,9 +466,11 @@ function Pile({
   );
 }
 
-function EmptyPile() {
+function EmptyPile({ width = "w-24" }: { width?: string }) {
   return (
-    <div className="grid w-24 aspect-[5/7] place-items-center rounded-xl border border-dashed border-white/15 text-white/30">
+    <div
+      className={`grid aspect-[5/7] place-items-center rounded-xl border border-dashed border-white/15 text-white/30 ${width}`}
+    >
       empty
     </div>
   );
