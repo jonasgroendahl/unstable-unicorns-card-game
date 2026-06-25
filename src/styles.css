@@ -843,7 +843,7 @@ a {
   /* Drop the fan's bottom edge below the viewport so it reads like a hand of
      cards you're holding — and reclaim that overlap as vertical space. */
   padding-bottom: 0;
-  margin-bottom: -3.25rem;
+  margin-bottom: -1.5rem;
 }
 .uu-hand-card {
   transform-origin: bottom center;
