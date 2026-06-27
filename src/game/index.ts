@@ -29,6 +29,8 @@ export interface CreateGameOptions {
   seats: SeatConfig[];
   seed?: number;
   deckId?: DeckId;
+  /** Delay between bot steps so their actions remain visible. */
+  botActionDelayMs?: number;
 }
 
 /** Build a fresh engine, deal the game, wire the bot auto-responder, begin turn 1. */
@@ -36,11 +38,12 @@ export function createGame(opts: CreateGameOptions): GameEngine {
   const seed = opts.seed ?? randomSeed();
   const state = createInitialState(opts.seats, seed, opts.gameId, opts.deckId ?? DEFAULT_DECK_ID);
   const engine = new GameEngine(state);
-  engine.onBotTurn = () => runBots(engine);
+  const botActionDelayMs = opts.botActionDelayMs;
+  engine.onBotTurn = () => runBots(engine, botActionDelayMs);
   // Kick off the first turn's beginning/draw phases.
   void engine.startTurn();
   // Prime bots in case player 1 is a bot.
-  runBots(engine);
+  runBots(engine, botActionDelayMs);
   return engine;
 }
 

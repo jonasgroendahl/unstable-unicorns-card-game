@@ -164,6 +164,7 @@ describe("full bot game", () => {
     const engine = createGame({
       gameId: "bots",
       seed: 999,
+      botActionDelayMs: 0,
       seats: [
         { id: "b1", name: "Bot 1", isBot: true },
         { id: "b2", name: "Bot 2", isBot: true },
