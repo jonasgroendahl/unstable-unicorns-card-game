@@ -8,7 +8,7 @@ import { useGameView } from "#/lib/useGameView.ts";
 import { audio } from "#/lib/audio.ts";
 import type { SeatConfig } from "#/game/state.ts";
 import { DeckPicker } from "#/components/game/DeckPicker.tsx";
-import { DEFAULT_DECK_ID, type DeckId } from "#/game/decks.ts";
+import { DEFAULT_DECK_ID, type DeckId, type ExpansionId } from "#/game/decks.ts";
 
 export const Route = createFileRoute("/debug")({ component: DebugGame });
 
@@ -16,18 +16,27 @@ interface Setup {
   humans: number;
   bots: number;
   deckId: DeckId;
+  expansionIds: ExpansionId[];
 }
 
 function DebugGame() {
   const [setup, setSetup] = useState<Setup | null>(null);
   if (!setup) return <SetupScreen onStart={setSetup} />;
-  return <LocalGame humans={setup.humans} bots={setup.bots} deckId={setup.deckId} />;
+  return (
+    <LocalGame
+      humans={setup.humans}
+      bots={setup.bots}
+      deckId={setup.deckId}
+      expansionIds={setup.expansionIds}
+    />
+  );
 }
 
 function SetupScreen({ onStart }: { onStart: (s: Setup) => void }) {
   const [humans, setHumans] = useState(1);
   const [bots, setBots] = useState(3);
   const [deckId, setDeckId] = useState<DeckId>(DEFAULT_DECK_ID);
+  const [expansionIds, setExpansionIds] = useState<ExpansionId[]>([]);
   const total = humans + bots;
   return (
     <div className="uu-root uu-starfield flex min-h-dvh items-center justify-center p-6">
@@ -46,7 +55,13 @@ function SetupScreen({ onStart }: { onStart: (s: Setup) => void }) {
           onChange={setHumans}
         />
         <Stepper label="AI bots" value={bots} min={0} max={8} onChange={setBots} />
-        <DeckPicker value={deckId} onChange={setDeckId} />
+        <DeckPicker
+          value={deckId}
+          onChange={setDeckId}
+          expansionIds={expansionIds}
+          onExpansionChange={setExpansionIds}
+          playerCount={total}
+        />
 
         <p className="mt-3 text-xs text-white/50">
           {total < 2
@@ -61,7 +76,7 @@ function SetupScreen({ onStart }: { onStart: (s: Setup) => void }) {
           disabled={total < 2 || total > 8}
           onClick={() => {
             audio.unlock();
-            onStart({ humans, bots, deckId });
+            onStart({ humans, bots, deckId, expansionIds });
           }}
         >
           Start game
@@ -100,7 +115,17 @@ function Stepper({
   );
 }
 
-function LocalGame({ humans, bots, deckId }: { humans: number; bots: number; deckId: DeckId }) {
+function LocalGame({
+  humans,
+  bots,
+  deckId,
+  expansionIds,
+}: {
+  humans: number;
+  bots: number;
+  deckId: DeckId;
+  expansionIds: ExpansionId[];
+}) {
   const seats = useMemo<SeatConfig[]>(() => {
     const s: SeatConfig[] = [];
     for (let i = 0; i < humans; i++) s.push({ id: `h${i}`, name: `Player ${i + 1}`, isBot: false });
@@ -109,7 +134,9 @@ function LocalGame({ humans, bots, deckId }: { humans: number; bots: number; dec
   }, [humans, bots]);
 
   const clientRef = useRef<LocalGameClient | null>(null);
-  if (!clientRef.current) clientRef.current = new LocalGameClient(seats, undefined, deckId);
+  if (!clientRef.current) {
+    clientRef.current = new LocalGameClient(seats, undefined, deckId, expansionIds);
+  }
   const client = clientRef.current;
 
   // The viewpoint: default to the first human, or seat 0.

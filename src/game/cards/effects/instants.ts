@@ -6,11 +6,15 @@
 
 import type { CardDefinition } from "../../types";
 
-type Behavior = Partial<Pick<CardDefinition, "unneighable">>;
+type Behavior = Partial<Pick<CardDefinition, "unneighable" | "instantKind">>;
 
 export const INSTANT_EFFECTS: Record<string, Behavior> = {
-  neigh: {},
-  "super-neigh": { unneighable: true },
+  neigh: { instantKind: "neigh" },
+  "super-neigh": { instantKind: "neigh", unneighable: true },
+  "neigh-mate": { instantKind: "neigh" },
+  "fishing-rod": { instantKind: "fishingRod" },
+  "flare-gun": { instantKind: "flareGun" },
+  "unicorn-net": { instantKind: "unicornNet" },
 };
 
 // Baby Unicorns: "If this would be sacrificed, destroyed, or returned to your

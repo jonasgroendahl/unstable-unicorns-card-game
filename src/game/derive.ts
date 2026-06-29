@@ -123,6 +123,7 @@ export function winThreshold(state: GameState): number {
 /** Queen Bee: Basic Unicorns can only enter the Queen Bee owner's stable. */
 export function canEnterStable(state: GameState, inst: CardInstance, ownerId: PlayerId): boolean {
   const def = defOf(state, inst);
+  if (def.kind === "basic" && hasAura(state, ownerId, "extremeAdventurer")) return false;
   if (def.kind === "basic" || def.kind === "baby") {
     // Find any Queen Bee in play.
     for (const pid of state.players.map((p) => p.id)) {

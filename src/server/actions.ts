@@ -5,7 +5,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { registry } from "./registry";
 import { sanitizeFor } from "../game/view";
-import { DECK_IDS } from "../game/decks";
+import { DECK_IDS, EXPANSION_IDS } from "../game/decks";
+import { BOT_DIFFICULTIES, DEFAULT_BOT_DIFFICULTY } from "../game/types";
 
 // --- Lobby ----------------------------------------------------------------
 
@@ -14,10 +15,11 @@ export const createLobby = createServerFn({ method: "POST" })
     z.object({
       hostName: z.string().trim().min(1).max(20),
       deckId: z.enum(DECK_IDS).default("base-first-edition"),
+      expansionIds: z.array(z.enum(EXPANSION_IDS)).default([]),
     }),
   )
   .handler(async ({ data }) => {
-    const lobby = await registry.createLobby(data.hostName, data.deckId);
+    const lobby = await registry.createLobby(data.hostName, data.deckId, data.expansionIds);
     return { gameId: lobby.gameId, joinCode: lobby.joinCode, youId: lobby.hostId };
   });
 
@@ -56,10 +58,37 @@ export const leaveMatchmakingQueue = createServerFn({ method: "POST" })
   .handler(({ data }) => registry.leaveMatchmaking(data.ticketId));
 
 export const addBotToLobby = createServerFn({ method: "POST" })
-  .validator(z.object({ gameId: z.string() }))
+  .validator(
+    z.object({
+      gameId: z.string(),
+      playerId: z.string(),
+      difficulty: z.enum(BOT_DIFFICULTIES).default(DEFAULT_BOT_DIFFICULTY),
+    }),
+  )
   .handler(async ({ data }) => {
-    await registry.addBot(data.gameId);
+    const bot = await registry.addBot(data.gameId, data.playerId, data.difficulty);
+    if (!bot) throw new Error("Only the host can add a bot before the game starts.");
     return registry.getLobby(data.gameId);
+  });
+
+export const setBotDifficulty = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      gameId: z.string(),
+      playerId: z.string(),
+      botId: z.string(),
+      difficulty: z.enum(BOT_DIFFICULTIES),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const lobby = await registry.setBotDifficulty(
+      data.gameId,
+      data.playerId,
+      data.botId,
+      data.difficulty,
+    );
+    if (!lobby) throw new Error("Only the host can update a bot before the game starts.");
+    return lobby;
   });
 
 export const removeSeat = createServerFn({ method: "POST" })
@@ -74,6 +103,20 @@ export const setLobbyDeck = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const lobby = await registry.setLobbyDeck(data.gameId, data.playerId, data.deckId);
     if (!lobby) throw new Error("Only the host can change the deck before the game starts.");
+    return lobby;
+  });
+
+export const setLobbyExpansions = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      gameId: z.string(),
+      playerId: z.string(),
+      expansionIds: z.array(z.enum(EXPANSION_IDS)),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const lobby = await registry.setLobbyExpansions(data.gameId, data.playerId, data.expansionIds);
+    if (!lobby) throw new Error("Only the host can change expansions before the game starts.");
     return lobby;
   });
 

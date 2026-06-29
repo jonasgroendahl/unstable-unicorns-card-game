@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Layers3, Search } from "lucide-react";
+import { Compass, Layers3, Search } from "lucide-react";
 import { Badge } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
 import {
@@ -15,9 +15,13 @@ import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
 import {
   DECK_OPTIONS,
   DECKS,
+  EXPANSION_OPTIONS,
+  EXPANSIONS,
+  definitionsForExpansion,
   definitionsForDeck,
   isExcludedInTwoPlayer,
   type DeckId,
+  type ExpansionId,
 } from "#/game/decks.ts";
 import { getCardKindLabel, getCardPresentation } from "#/game/themes/cardPresentation.ts";
 import { CardView } from "./CardView.tsx";
@@ -35,23 +39,33 @@ const CARD_GROUPS = [
 export function DeckPicker({
   value,
   onChange,
+  expansionIds = [],
+  onExpansionChange,
   disabled,
   playerCount,
 }: {
   value: DeckId;
   onChange?: (deckId: DeckId) => void;
+  expansionIds?: ExpansionId[];
+  onExpansionChange?: (expansionIds: ExpansionId[]) => void;
   disabled?: boolean;
   /** Number of players currently in the lobby; drives 2-player exclusions. */
   playerCount?: number;
 }) {
   const { themeId } = useGameTheme();
   const isTwoPlayer = playerCount === 2;
-  const [previewDeckId, setPreviewDeckId] = useState<DeckId | null>(null);
+  const [preview, setPreview] = useState<
+    { kind: "base"; id: DeckId } | { kind: "expansion"; id: ExpansionId } | null
+  >(null);
   const [query, setQuery] = useState("");
   const previewCards = useMemo(() => {
-    if (!previewDeckId) return [];
+    if (!preview) return [];
     const normalized = query.trim().toLowerCase();
-    return definitionsForDeck(previewDeckId).filter((card) => {
+    const definitions =
+      preview.kind === "base"
+        ? definitionsForDeck(preview.id)
+        : definitionsForExpansion(preview.id);
+    return definitions.filter((card) => {
       const presentation = getCardPresentation(themeId, card);
       return (
         !normalized ||
@@ -59,7 +73,20 @@ export function DeckPicker({
         card.text.toLowerCase().includes(normalized)
       );
     });
-  }, [previewDeckId, query, themeId]);
+  }, [preview, query, themeId]);
+
+  const previewName =
+    preview?.kind === "base"
+      ? DECKS[preview.id].name
+      : preview?.kind === "expansion"
+        ? EXPANSIONS[preview.id].name
+        : "Deck preview";
+  const previewCardCount =
+    preview?.kind === "base"
+      ? DECKS[preview.id].cardCount
+      : preview?.kind === "expansion"
+        ? EXPANSIONS[preview.id].cardCount
+        : 0;
 
   return (
     <div className="uu-deck-picker flex flex-col gap-2">
@@ -98,7 +125,7 @@ export function DeckPicker({
               aria-label={`Preview ${deck.name} cards`}
               onClick={() => {
                 setQuery("");
-                setPreviewDeckId(deck.id);
+                setPreview({ kind: "base", id: deck.id });
               }}
             >
               <Search data-icon="inline-start" /> Preview cards
@@ -107,17 +134,72 @@ export function DeckPicker({
         ))}
       </ToggleGroup>
 
+      <span className="mt-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
+        <Compass data-icon="inline-start" /> Expansion decks
+        <Badge variant="outline">Optional</Badge>
+      </span>
+      <ToggleGroup
+        type="multiple"
+        variant="outline"
+        spacing={2}
+        value={expansionIds}
+        disabled={disabled || !onExpansionChange}
+        onValueChange={(next) => onExpansionChange?.(next as ExpansionId[])}
+        className="grid w-full grid-cols-1"
+        aria-label="Choose expansion decks"
+      >
+        {EXPANSION_OPTIONS.map((expansion) => (
+          <div key={expansion.id} className="uu-deck-option relative min-w-0">
+            <ToggleGroupItem
+              value={expansion.id}
+              aria-label={`Add ${expansion.name}`}
+              className="uu-deck-option-toggle h-full min-h-32 w-full justify-start gap-3 whitespace-normal px-3 pb-11 pt-3 text-left"
+            >
+              <img
+                src={expansion.image}
+                alt=""
+                className="h-16 w-12 shrink-0 rounded object-cover shadow-sm"
+              />
+              <span className="flex min-w-0 flex-col items-start gap-1">
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <strong>{expansion.shortName}</strong>
+                  <Badge variant="secondary">+{expansion.cardCount} cards</Badge>
+                </span>
+                <span className="text-xs font-normal">{expansion.description}</span>
+              </span>
+            </ToggleGroupItem>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="uu-deck-preview absolute right-1.5 bottom-1.5 left-1.5 w-auto"
+              aria-label={`Preview ${expansion.name} cards`}
+              onClick={() => {
+                setQuery("");
+                setPreview({ kind: "expansion", id: expansion.id });
+              }}
+            >
+              <Search data-icon="inline-start" /> Preview expansion
+            </Button>
+          </div>
+        ))}
+      </ToggleGroup>
+      {expansionIds.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No expansion deck selected.</p>
+      ) : null}
+
       <Dialog
-        open={previewDeckId !== null}
+        open={preview !== null}
         onOpenChange={(open) => {
-          if (!open) setPreviewDeckId(null);
+          if (!open) setPreview(null);
         }}
       >
         <DialogContent className="flex h-[min(90dvh,56rem)] max-w-[calc(100%-2rem)] flex-col overflow-hidden sm:max-w-6xl">
           <DialogHeader>
-            <DialogTitle>{previewDeckId ? DECKS[previewDeckId].name : "Deck preview"}</DialogTitle>
+            <DialogTitle>{previewName}</DialogTitle>
             <DialogDescription>
-              Search and inspect every card in this 127-card deck. Copy counts are shown per card.
+              Search and inspect every card in this {previewCardCount}-card deck. Copy counts are
+              shown per card.
             </DialogDescription>
           </DialogHeader>
           {isTwoPlayer && (

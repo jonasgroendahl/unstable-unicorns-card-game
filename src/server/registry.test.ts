@@ -46,6 +46,27 @@ it("persists the selected deck and starts the game with it", async () => {
   expect((await registry.getEngine(lobby.gameId))?.state.deckId).toBe("base-second-edition");
 });
 
+it("defaults to no expansion and starts with the host-selected expansion", async () => {
+  const persistence = new MemoryGamePersistence();
+  const registry = new Registry(createRegistryStore(persistence));
+  const lobby = await registry.createLobby("Alice");
+  const bob = await registry.joinLobby(lobby.gameId, "Bob");
+
+  expect(lobby.expansionIds).toEqual([]);
+  expect(
+    await registry.setLobbyExpansions(lobby.gameId, bob!.id, ["adventures-second-edition"]),
+  ).toBeUndefined();
+  expect(
+    (await registry.setLobbyExpansions(lobby.gameId, lobby.hostId, ["adventures-second-edition"]))
+      ?.expansionIds,
+  ).toEqual(["adventures-second-edition"]);
+
+  await registry.startGame(lobby.gameId);
+  expect((await registry.getEngine(lobby.gameId))?.state.expansionIds).toEqual([
+    "adventures-second-edition",
+  ]);
+});
+
 it("lets only the host change the lobby deck before the game starts", async () => {
   const registry = new Registry(createRegistryStore(new MemoryGamePersistence()));
   const lobby = await registry.createLobby("Alice");
@@ -111,7 +132,7 @@ it("does not record games containing bots", async () => {
   const persistence = new MemoryGamePersistence();
   const registry = new Registry(createRegistryStore(persistence));
   const lobby = await registry.createLobby("Alice");
-  await registry.addBot(lobby.gameId);
+  await registry.addBot(lobby.gameId, lobby.hostId);
   await registry.startGame(lobby.gameId);
 
   const engine = await registry.getEngine(lobby.gameId);
@@ -121,6 +142,58 @@ it("does not record games containing bots", async () => {
   await registry.flush(lobby.gameId);
 
   expect(await registry.getGameHistory()).toEqual({ leaderboard: [], games: [] });
+});
+
+it("defaults bots to easy, lets the host edit them, and copies difficulty into the game", async () => {
+  const registry = new Registry(createRegistryStore(new MemoryGamePersistence()));
+  const lobby = await registry.createLobby("Alice");
+
+  expect(await registry.addBot(lobby.gameId, "not-the-host", "hard")).toBeUndefined();
+  const bot = await registry.addBot(lobby.gameId, lobby.hostId);
+  expect(bot?.botDifficulty).toBe("easy");
+  expect(
+    await registry.setBotDifficulty(lobby.gameId, lobby.hostId, lobby.hostId, "hard"),
+  ).toBeUndefined();
+  expect(
+    await registry.setBotDifficulty(lobby.gameId, "not-the-host", bot!.id, "hard"),
+  ).toBeUndefined();
+  expect(
+    await registry.setBotDifficulty(lobby.gameId, lobby.hostId, "missing-bot", "medium"),
+  ).toBeUndefined();
+  expect(
+    (await registry.setBotDifficulty(lobby.gameId, lobby.hostId, bot!.id, "medium"))?.seats[1],
+  ).toMatchObject({ id: bot!.id, botDifficulty: "medium" });
+
+  expect(
+    (await registry.setBotDifficulty(lobby.gameId, lobby.hostId, bot!.id, "hard"))?.seats[1],
+  ).toMatchObject({ id: bot!.id, botDifficulty: "hard" });
+
+  await registry.startGame(lobby.gameId);
+  expect((await registry.getEngine(lobby.gameId))?.state.players[1]).toMatchObject({
+    isBot: true,
+    botDifficulty: "hard",
+  });
+  expect(
+    await registry.setBotDifficulty(lobby.gameId, lobby.hostId, bot!.id, "medium"),
+  ).toBeUndefined();
+});
+
+it("normalizes legacy bot seats and active players to easy after hydration", async () => {
+  const persistence = new MemoryGamePersistence();
+  const first = new Registry(createRegistryStore(persistence));
+  const lobby = await first.createLobby("Alice");
+  const bot = await first.addBot(lobby.gameId, lobby.hostId, "hard");
+  await first.startGame(lobby.gameId);
+  await first.flush(lobby.gameId);
+
+  const persisted = await persistence.findByGameId(lobby.gameId);
+  delete persisted!.lobby.seats.find((seat) => seat.id === bot!.id)!.botDifficulty;
+  delete persisted!.state!.players.find((player) => player.id === bot!.id)!.botDifficulty;
+  await persistence.save(persisted!);
+
+  const restarted = new Registry(createRegistryStore(persistence));
+  expect((await restarted.getLobby(lobby.gameId))?.seats[1].botDifficulty).toBe("easy");
+  expect((await restarted.getEngine(lobby.gameId))?.state.players[1].botDifficulty).toBe("easy");
 });
 
 it("honestly reports when nobody else is in the matchmaking queue", async () => {

@@ -66,6 +66,7 @@ export class GameEngine {
   constructor(state: GameState) {
     this.state = state;
     this.state.resolving ??= [];
+    this.state.skipDrawPhase ??= false;
     this.logSeq = state.log.reduce((highest, event) => Math.max(highest, event.t), 0);
   }
 
@@ -133,6 +134,7 @@ export class GameEngine {
     const def = this.reactionDeferred;
     const rx = this.state.reaction;
     if (!def || !rx) throw new EngineError("No reaction window is open.");
+    if (!rx.awaitingFrom.includes(playerId)) throw new EngineError("You can't react right now.");
     if (instanceId === null) {
       // Pass.
       rx.awaitingFrom = rx.awaitingFrom.filter((p) => p !== playerId);
@@ -150,8 +152,10 @@ export class GameEngine {
       throw new EngineError("You don't hold that card.");
     }
     const cardDef = getDefinition(inst.defId);
-    if (cardDef.cardClass !== "instant") throw new EngineError("That isn't a Neigh.");
-    if (!rx.awaitingFrom.includes(playerId)) throw new EngineError("You can't react right now.");
+    const expectedKind = rx.kind === "neigh" ? "neigh" : rx.kind;
+    if (cardDef.instantKind !== expectedKind) {
+      throw new EngineError("That Instant card cannot be played in this reaction window.");
+    }
     this.clearReactionTimer();
     def.resolve({ byPlayer: playerId, instanceId });
   }
@@ -240,6 +244,9 @@ export class GameEngine {
         throw new EndTurnSignal();
       },
       grantExtraTurn: (pid) => self.state.pendingTurns.push(pid),
+      skipDrawPhase: () => {
+        self.state.skipDrawPhase = true;
+      },
 
       searchDeck: (pid, filter, opts) => self.searchDeck(pid, filter, opts),
       shuffleDeck: () => self.shuffleDeck(),
@@ -262,6 +269,7 @@ export class GameEngine {
       options,
       minMax: opts.minMax ?? [1, 1],
       may: opts.may,
+      intent: opts.intent,
     });
     return typeof res === "string" ? res : null;
   }
@@ -280,6 +288,7 @@ export class GameEngine {
       options,
       minMax: opts.minMax ?? [1, 1],
       may: opts.may,
+      intent: opts.intent,
     });
     if (Array.isArray(res)) return res;
     if (typeof res === "string") return [res];
@@ -299,6 +308,7 @@ export class GameEngine {
       options,
       may: opts.may,
       stablePreviewInstanceId: opts.stablePreviewInstanceId,
+      intent: opts.intent,
     });
     return typeof res === "string" ? res : null;
   }
@@ -363,6 +373,7 @@ export class GameEngine {
   private async fireTrigger(
     kind: "onEnterStable" | "beginningOfTurn" | "endOfTurn" | "onSacrificedOrDestroyed",
     inst: CardInstance,
+    triggerOwnerId?: PlayerId | null,
   ): Promise<void> {
     const def = getDefinition(inst.defId);
     const effect = def.triggers?.[kind];
@@ -375,8 +386,9 @@ export class GameEngine {
     ) {
       return;
     }
-    const ctx = this.makeContext(inst.ownerId ?? this.currentPlayerId());
-    await effect(ctx, inst);
+    const ownerId = triggerOwnerId ?? inst.ownerId;
+    const ctx = this.makeContext(ownerId ?? this.currentPlayerId());
+    await effect(ctx, ownerId && !inst.ownerId ? { ...inst, ownerId } : inst);
   }
 
   /** Barbed Wire: discard a card whenever a unicorn enters/leaves your stable. */
@@ -439,6 +451,16 @@ export class GameEngine {
       return { removed: false, prevented: true };
     }
 
+    const netPlayer = await this.resolveSpecialInstant("unicornNet", id, null);
+    if (netPlayer) {
+      await this.removeFromStable(id);
+      this.relocateCard(id, netPlayer, "hand");
+      this.pushLog(`${this.nameOf(netPlayer)} caught ${def.name} with Unicorn Net`, {
+        kind: "instant",
+      });
+      return { removed: false, prevented: true };
+    }
+
     // Layer 2: optional replacements (asked of the card's owner).
     const replaced = await this.tryReplacement(inst, "destroy");
     if (replaced) return { removed: false, prevented: true };
@@ -453,6 +475,15 @@ export class GameEngine {
     const def = getDefinition(inst.defId);
     if (!canBeSacrificed(this.state, inst)) {
       this.pushLog(`${def.name} cannot be sacrificed`, { kind: "prevent" });
+      return { removed: false, prevented: true };
+    }
+    const netPlayer = await this.resolveSpecialInstant("unicornNet", id, null);
+    if (netPlayer) {
+      await this.removeFromStable(id);
+      this.relocateCard(id, netPlayer, "hand");
+      this.pushLog(`${this.nameOf(netPlayer)} caught ${def.name} with Unicorn Net`, {
+        kind: "instant",
+      });
       return { removed: false, prevented: true };
     }
     const replaced = await this.tryReplacement(inst, "sacrifice");
@@ -495,6 +526,19 @@ export class GameEngine {
       }
     }
 
+    if (
+      owner &&
+      isUnicorn(this.state, inst) &&
+      hasAura(this.state, owner, "survivalKit") &&
+      (this.state.hands[owner] ?? []).length >= 2
+    ) {
+      const use = await this.yesNo(owner, "Unicorn Survival Kit: discard 2 cards instead?");
+      if (use) {
+        await this.discardChoice(owner, 2);
+        return true;
+      }
+    }
+
     // Black Knight: only on destroy, and only to save a DIFFERENT unicorn.
     if (cause === "destroy" && owner) {
       const blackKnight = (this.state.stables[owner] ?? [])
@@ -517,13 +561,22 @@ export class GameEngine {
 
   private async commitDeath(inst: CardInstance): Promise<void> {
     const def = getDefinition(inst.defId);
+    const owner = inst.ownerId;
+    const wasUnicorn = isUnicorn(this.state, inst);
+    const unicornOverboard = Boolean(
+      owner && wasUnicorn && hasAura(this.state, owner, "unicornOverboard"),
+    );
     await this.removeFromStable(inst.instanceId);
     this.relocateCard(inst.instanceId, null, "discard");
     this.pushLog(`${def.name} was sent to the discard pile`, {
       kind: "death",
       instanceId: inst.instanceId,
     });
-    await this.fireTrigger("onSacrificedOrDestroyed", inst);
+    if (unicornOverboard && owner && (this.state.hands[owner] ?? []).length > 0) {
+      this.pushLog("Unicorn Overboard forces a discard", { kind: "downgrade" }, owner);
+      await this.discardChoice(owner, 1);
+    }
+    await this.fireTrigger("onSacrificedOrDestroyed", inst, owner);
   }
 
   async returnToHand(id: InstanceId): Promise<void> {
@@ -545,6 +598,16 @@ export class GameEngine {
   async steal(id: InstanceId, toPlayerId: PlayerId): Promise<boolean> {
     const inst = this.state.instances[id];
     if (isUnicorn(this.state, inst) && !canEnterStable(this.state, inst, toPlayerId)) return false;
+    const rodPlayer = await this.resolveSpecialInstant("fishingRod", id, toPlayerId);
+    if (rodPlayer) {
+      if (isUnicorn(this.state, inst)) await this.barbedWireOn(inst.ownerId);
+      this.relocateCard(id, rodPlayer, "stable");
+      this.pushLog(`${this.nameOf(rodPlayer)} redirected ${getDefinition(inst.defId).name}`, {
+        kind: "instant",
+      });
+      if (isUnicorn(this.state, inst)) await this.barbedWireOn(rodPlayer);
+      return false;
+    }
     if (isUnicorn(this.state, inst)) await this.barbedWireOn(inst.ownerId);
     this.relocateCard(id, toPlayerId, "stable");
     this.pushLog(`${this.nameOf(toPlayerId)} stole ${getDefinition(inst.defId).name}`, {
@@ -569,6 +632,14 @@ export class GameEngine {
         { kind: "draw" },
         playerId,
       );
+    if (
+      drawn.length > 0 &&
+      hasAura(this.state, playerId, "smallBackpack") &&
+      (this.state.hands[playerId] ?? []).length > 0
+    ) {
+      this.pushLog("Extremely Small Backpack forces a discard", { kind: "downgrade" }, playerId);
+      await this.discardChoice(playerId, 1);
+    }
     return drawn;
   }
 
@@ -586,6 +657,7 @@ export class GameEngine {
       prompt: count === 1 ? "Discard a card." : `Discard ${count} cards.`,
       minMax: [count, count],
       may: opts?.may,
+      intent: "cost",
     });
     for (const id of picks) await this.discardSpecific(id);
     return picks;
@@ -641,6 +713,7 @@ export class GameEngine {
     const pick = await this.chooseInstance(playerId, matches, {
       may: opts.may,
       prompt: opts.prompt,
+      intent: "gain",
     });
     if (pick) {
       this.relocateCard(pick, playerId, "hand");
@@ -682,7 +755,7 @@ export class GameEngine {
       .filter((p) => canPlayNeigh(this.state, p.id))
       .filter((p) =>
         (this.state.hands[p.id] ?? []).some(
-          (id) => getDefinition(this.state.instances[id].defId).cardClass === "instant",
+          (id) => getDefinition(this.state.instances[id].defId).instantKind === "neigh",
         ),
       )
       .map((p) => p.id);
@@ -734,6 +807,7 @@ export class GameEngine {
     const deferred = makeDeferred<{ byPlayer: PlayerId; instanceId: InstanceId } | null>();
     this.reactionDeferred = deferred;
     this.state.reaction = {
+      kind: "neigh",
       targetInstanceId,
       targetByPlayer,
       chain: chain.slice(),
@@ -744,6 +818,53 @@ export class GameEngine {
     this.reactionTimer = setTimeout(() => deferred.resolve(null), REACTION_WINDOW_MS);
     this.broadcast();
     return deferred.promise;
+  }
+
+  private async resolveSpecialInstant(
+    kind: "fishingRod" | "flareGun" | "unicornNet",
+    targetInstanceId: InstanceId,
+    targetByPlayer: PlayerId | null,
+  ): Promise<PlayerId | null> {
+    const responders = this.state.players
+      .filter((player) => player.id !== targetByPlayer)
+      .filter((player) =>
+        (this.state.hands[player.id] ?? []).some(
+          (id) => getDefinition(this.state.instances[id].defId).instantKind === kind,
+        ),
+      )
+      .map((player) => player.id);
+    if (responders.length === 0) return null;
+
+    const deferred = makeDeferred<{ byPlayer: PlayerId; instanceId: InstanceId } | null>();
+    this.reactionDeferred = deferred;
+    this.state.reaction = {
+      kind,
+      targetInstanceId,
+      targetByPlayer: targetByPlayer ?? this.currentPlayerId(),
+      chain: [],
+      awaitingFrom: responders,
+      closesAt: Date.now() + REACTION_WINDOW_MS,
+    };
+    this.clearReactionTimer();
+    this.reactionTimer = setTimeout(() => deferred.resolve(null), REACTION_WINDOW_MS);
+    this.broadcast();
+
+    const reaction = await deferred.promise;
+    this.clearReactionTimer();
+    this.reactionDeferred = null;
+    this.state.reaction = null;
+    if (!reaction) {
+      this.broadcast();
+      return null;
+    }
+
+    const definition = getDefinition(this.state.instances[reaction.instanceId].defId);
+    this.relocateCard(reaction.instanceId, null, "discard");
+    this.pushLog(`${this.nameOf(reaction.byPlayer)} played ${definition.name}`, {
+      kind: "instant",
+    });
+    this.broadcast();
+    return reaction.byPlayer;
   }
 
   // -------------------------------------------------------------------------
@@ -767,14 +888,46 @@ export class GameEngine {
         );
         const pick = await this.chooseInstance(tooBig.id, unicorns, {
           prompt: "Tiny Stable: sacrifice a Unicorn (more than 5 in your Stable).",
+          intent: "cost",
         });
         if (pick) await this.sacrifice(pick);
         else break; // no sacrificeable unicorn — avoid infinite loop
         continue;
       }
+      const emptyBackpack = this.state.players.find(
+        (player) =>
+          hasAura(this.state, player.id, "smallBackpack") &&
+          (this.state.hands[player.id] ?? []).length === 0,
+      );
+      if (emptyBackpack) {
+        const backpack = (this.state.stables[emptyBackpack.id] ?? []).find(
+          (id) => getDefinition(this.state.instances[id].defId).aura === "smallBackpack",
+        );
+        const others = this.state.players
+          .filter(
+            (player) =>
+              player.id !== emptyBackpack.id && (this.state.hands[player.id] ?? []).length > 0,
+          )
+          .map((player) => player.id);
+        if (!backpack || others.length === 0) break;
+        const target = await this.choosePlayer(emptyBackpack.id, others, {
+          prompt: "Extremely Small Backpack: move this card to another player's Stable.",
+          stablePreviewInstanceId: backpack,
+        });
+        if (!target) break;
+        this.relocateCard(backpack, target, "stable");
+        continue;
+      }
       // Win check.
       const winner = this.state.players.find(
-        (p) => unicornCountFor(this.state, p.id) >= winThreshold(this.state),
+        (player) =>
+          unicornCountFor(this.state, player.id) >= winThreshold(this.state) &&
+          !(
+            hasAura(this.state, player.id, "blackSpot") &&
+            (this.state.stables[player.id] ?? []).some(
+              (id) => getDefinition(this.state.instances[id].defId).kind === "basic",
+            )
+          ),
       );
       if (winner && this.state.status === "active") {
         this.state.status = "finished";
@@ -802,16 +955,29 @@ export class GameEngine {
     this.state.actionsRemaining = { plays: 1, draws: 0 };
     this.state.playedThisTurn = false;
     this.state.lastAutoDrawn = null;
+    this.state.skipDrawPhase = false;
     this.pushLog(`${this.nameOf(pid)}'s turn begins`, { kind: "turn", playerId: pid });
     this.broadcast();
 
     const snapshot = structuredClone(this.state);
     try {
+      const flarePlayer = await this.resolveSpecialInstant("flareGun", "", pid);
+      if (flarePlayer) {
+        this.pushLog(`${this.nameOf(pid)} skips their Beginning and Draw phases`, {
+          kind: "instant",
+          playerId: pid,
+        });
+        this.state.phase = "action";
+        this.broadcast();
+        return;
+      }
       // Beginning-of-turn triggers from the player's stable cards.
-      for (const id of (this.state.stables[pid] ?? []).slice()) {
-        const inst = this.state.instances[id];
-        if (inst.ownerId !== pid) continue; // moved away mid-resolution
-        await this.fireTrigger("beginningOfTurn", inst);
+      if (!hasAura(this.state, pid, "brokenSundial")) {
+        for (const id of (this.state.stables[pid] ?? []).slice()) {
+          const inst = this.state.instances[id];
+          if (inst.ownerId !== pid) continue; // moved away mid-resolution
+          await this.fireTrigger("beginningOfTurn", inst);
+        }
       }
       // Extra plays from upgrades (Double Dutch).
       for (const id of this.state.stables[pid] ?? []) {
@@ -825,13 +991,15 @@ export class GameEngine {
       }
       // Draw phase: draw the mandatory card automatically.
       this.state.phase = "draw";
-      const [drawn] = await this.draw(pid, 1);
-      if (drawn) {
-        this.state.lastAutoDrawn = {
-          playerId: pid,
-          instanceId: drawn,
-          turnNumber: this.state.turnNumber,
-        };
+      if (!this.state.skipDrawPhase) {
+        const [drawn] = await this.draw(pid, 1);
+        if (drawn) {
+          this.state.lastAutoDrawn = {
+            playerId: pid,
+            instanceId: drawn,
+            turnNumber: this.state.turnNumber,
+          };
+        }
       }
     } catch (err) {
       if (err instanceof EndTurnSignal) {
@@ -929,6 +1097,7 @@ export class GameEngine {
               ? "Attach this Downgrade to which player's Stable?"
               : "Attach this Upgrade to which player's Stable?",
           stablePreviewInstanceId: inst.instanceId,
+          intent: def.cardClass === "downgrade" ? "attack" : "support",
         });
         const dest = target ?? playerId;
         this.relocateCard(inst.instanceId, dest, "stable");
@@ -1039,6 +1208,7 @@ export class GameEngine {
     this.state.stables = snapshot.stables;
     this.state.actionsRemaining = snapshot.actionsRemaining;
     this.state.playedThisTurn = snapshot.playedThisTurn;
+    this.state.skipDrawPhase = snapshot.skipDrawPhase;
     this.state.phase = snapshot.phase;
     this.state.pendingDecisions = [];
     this.state.reaction = null;

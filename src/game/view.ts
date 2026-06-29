@@ -5,7 +5,7 @@
 import { getDefinition } from "./cards";
 import { handIsPublic, unicornCountFor, winThreshold } from "./derive";
 import type { GameState, InstanceId, PendingDecision, PlayerId, ReactionState } from "./types";
-import type { DeckId } from "./decks";
+import type { DeckId, ExpansionId } from "./decks";
 
 export interface CardView {
   instanceId: InstanceId;
@@ -36,6 +36,7 @@ export interface PlayerView {
 export interface GameView {
   gameId: string;
   deckId: DeckId;
+  expansionIds: ExpansionId[];
   status: GameState["status"];
   phase: GameState["phase"];
   viewerId: PlayerId;
@@ -69,6 +70,7 @@ export interface DecisionView extends PendingDecision {
 }
 
 export interface ReactionView {
+  kind: ReactionState["kind"];
   targetCard: CardView | null;
   targetByPlayer: PlayerId;
   chain: { byPlayer: PlayerId; card: CardView }[];
@@ -95,9 +97,13 @@ function toCardView(state: GameState, id: InstanceId): CardView {
   };
 }
 
-function instantsInHand(state: GameState, playerId: PlayerId): CardView[] {
+function instantsInHand(
+  state: GameState,
+  playerId: PlayerId,
+  instantKind: NonNullable<ReturnType<typeof getDefinition>["instantKind"]>,
+): CardView[] {
   return (state.hands[playerId] ?? [])
-    .filter((id) => getDefinition(state.instances[id].defId).cardClass === "instant")
+    .filter((id) => getDefinition(state.instances[id].defId).instantKind === instantKind)
     .map((id) => toCardView(state, id));
 }
 
@@ -149,6 +155,7 @@ export function sanitizeFor(state: GameState, viewerId: PlayerId): GameView {
   return {
     gameId: state.gameId,
     deckId: state.deckId,
+    expansionIds: state.expansionIds ?? [],
     status: state.status,
     phase: state.phase,
     viewerId,
@@ -178,6 +185,7 @@ export function sanitizeFor(state: GameState, viewerId: PlayerId): GameView {
 
 function buildReactionView(state: GameState, viewerId: PlayerId, rx: ReactionState): ReactionView {
   return {
+    kind: rx.kind,
     targetCard: state.instances[rx.targetInstanceId]
       ? toCardView(state, rx.targetInstanceId)
       : null,
@@ -188,6 +196,8 @@ function buildReactionView(state: GameState, viewerId: PlayerId, rx: ReactionSta
     })),
     closesAt: rx.closesAt,
     canRespond: rx.awaitingFrom.includes(viewerId),
-    playableNeighs: rx.awaitingFrom.includes(viewerId) ? instantsInHand(state, viewerId) : [],
+    playableNeighs: rx.awaitingFrom.includes(viewerId)
+      ? instantsInHand(state, viewerId, rx.kind === "neigh" ? "neigh" : rx.kind)
+      : [],
   };
 }

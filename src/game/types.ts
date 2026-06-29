@@ -5,13 +5,17 @@
 //   CardInstance   = a physical card in a game, with mutable zone/owner/runtime state.
 
 import type { CardKind } from "./cards/cardData";
-import type { DeckId } from "./decks";
+import type { DeckId, ExpansionId } from "./decks";
 
 export type { CardKind };
 
 export type PlayerId = string;
 export type InstanceId = string;
 export type DefId = string; // === card slug
+
+export const BOT_DIFFICULTIES = ["easy", "medium", "hard"] as const;
+export type BotDifficulty = (typeof BOT_DIFFICULTIES)[number];
+export const DEFAULT_BOT_DIFFICULTY: BotDifficulty = "easy";
 
 export type Zone = "deck" | "hand" | "stable" | "discard" | "nursery" | "resolving";
 
@@ -44,7 +48,13 @@ export type AuraKind =
   | "nannyCam" // your hand is public
   | "rainbowAura" // your unicorns can't be destroyed
   | "tinyStable" // >5 unicorns => sacrifice down (state-based)
-  | "barbedWire"; // unicorn enter/leave your stable => discard a card
+  | "barbedWire" // unicorn enter/leave your stable => discard a card
+  | "extremeAdventurer" // Basic Unicorn cards cannot enter your Stable
+  | "brokenSundial" // skip beginning-of-turn triggers
+  | "smallBackpack" // discard after draws; moves away while hand is empty
+  | "blackSpot" // cannot win while a Basic Unicorn is in your Stable
+  | "unicornOverboard" // discard whenever your Unicorn is sacrificed/destroyed
+  | "survivalKit"; // may discard 2 instead of losing a Unicorn
 
 /** Replacement-effect participation resolved inside destroy()/sacrifice(). */
 export type ReplacementKind =
@@ -70,6 +80,7 @@ export interface CardDefinition {
   text: string;
   image: string;
   copies: number;
+  setId: "base" | ExpansionId;
 
   /** Triggered effects keyed by when they fire. */
   triggers?: Partial<Record<TriggerKind, Effect>>;
@@ -83,6 +94,8 @@ export interface CardDefinition {
   canPlay?: (ctx: EffectContext, source: CardInstance) => boolean;
   /** Instant cards that cannot be Neigh'd (Super Neigh). */
   unneighable?: boolean;
+  /** Which reaction window can consume this Instant card. */
+  instantKind?: "neigh" | "fishingRod" | "flareGun" | "unicornNet";
   /** Extra action economy while in a stable at beginning of turn. */
   grantsExtraPlays?: number;
   grantsExtraDraws?: number;
@@ -127,6 +140,9 @@ export type DecisionKind =
   | "chooseOption" // pick from arbitrary string keys
   | "yesNo"; // confirm / decline
 
+/** Semantic guidance for automated players; human-facing prompts remain unchanged. */
+export type DecisionIntent = "gain" | "cost" | "attack" | "support";
+
 export interface PendingDecision {
   id: string;
   playerId: PlayerId; // who must answer (NOT necessarily the turn-holder)
@@ -144,6 +160,8 @@ export interface PendingDecision {
   sourceInstanceId?: InstanceId;
   /** Card to preview inside a hovered Stable while choosing its destination. */
   stablePreviewInstanceId?: InstanceId;
+  /** Typed strategy hint so bots do not need to infer intent from display copy. */
+  intent?: DecisionIntent;
 }
 
 // ---------------------------------------------------------------------------
@@ -158,6 +176,7 @@ export interface ReactionLink {
 }
 
 export interface ReactionState {
+  kind: "neigh" | "fishingRod" | "flareGun" | "unicornNet";
   /** The card being reacted to lives at index 0; subsequent links are Neighs. */
   targetInstanceId: InstanceId;
   targetByPlayer: PlayerId;
@@ -188,12 +207,15 @@ export interface GamePlayer {
   id: PlayerId;
   name: string;
   isBot: boolean;
+  /** Missing on legacy snapshots and humans; both are normalized safely. */
+  botDifficulty?: BotDifficulty;
   connected: boolean;
 }
 
 export interface GameState {
   gameId: string;
   deckId: DeckId;
+  expansionIds: ExpansionId[];
   rngSeed: number; // advanced by every shuffle/random draw
   players: GamePlayer[]; // seating order
   instances: Record<InstanceId, CardInstance>;
@@ -217,6 +239,8 @@ export interface GameState {
   playedThisTurn: boolean;
   /** Latest mandatory beginning-of-turn draw, used for the owner's UI cue. */
   lastAutoDrawn: { playerId: PlayerId; instanceId: InstanceId; turnNumber: number } | null;
+  /** Transient turn flag used by Royal Hooves and Flare Gun. */
+  skipDrawPhase: boolean;
 
   pendingDecisions: PendingDecision[]; // STACK; top = live
   reaction: ReactionState | null;
@@ -234,12 +258,14 @@ export interface ChooseInstanceOpts {
   may?: boolean;
   prompt: string;
   minMax?: [number, number];
+  intent?: DecisionIntent;
 }
 
 export interface ChoosePlayerOpts {
   may?: boolean;
   prompt: string;
   stablePreviewInstanceId?: InstanceId;
+  intent?: DecisionIntent;
 }
 
 /**
@@ -315,6 +341,7 @@ export interface EffectContext {
   // --- turn control ---
   endTurnNow(): never; // throws EndTurnSignal
   grantExtraTurn(playerId: PlayerId): void;
+  skipDrawPhase(): void;
 
   // --- deck/search ---
   searchDeck(

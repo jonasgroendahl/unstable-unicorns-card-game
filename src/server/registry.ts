@@ -7,8 +7,13 @@ import { runBots } from "../game/ai/bot";
 import { GameEngine } from "../game/engine/GameEngine";
 import { makeGameId, makeJoinCode } from "../game/ids";
 import { createGame } from "../game/index";
-import type { GameState } from "../game/types";
-import { DEFAULT_DECK_ID, type DeckId } from "../game/decks";
+import { DEFAULT_BOT_DIFFICULTY, type BotDifficulty, type GameState } from "../game/types";
+import {
+  DEFAULT_DECK_ID,
+  DEFAULT_EXPANSION_IDS,
+  type DeckId,
+  type ExpansionId,
+} from "../game/decks";
 import { createGamePersistence, type GamePersistence, type PersistedGame } from "./persistence";
 import { buildGameHistoryData, type CompletedGame, type GameHistoryData } from "./gameHistory";
 
@@ -16,6 +21,7 @@ export interface LobbySeat {
   id: string;
   name: string;
   isBot: boolean;
+  botDifficulty?: BotDifficulty;
   connected: boolean;
 }
 
@@ -26,6 +32,7 @@ export interface Lobby {
   seats: LobbySeat[];
   status: "lobby" | "active" | "finished";
   deckId: DeckId;
+  expansionIds: ExpansionId[];
   createdAt: number;
 }
 
@@ -97,7 +104,11 @@ export function createRegistryStore(persistence = createGamePersistence()): Regi
 export class Registry {
   constructor(private store: RegistryStore) {}
 
-  async createLobby(hostName: string, deckId: DeckId = DEFAULT_DECK_ID): Promise<Lobby> {
+  async createLobby(
+    hostName: string,
+    deckId: DeckId = DEFAULT_DECK_ID,
+    expansionIds: ExpansionId[] = DEFAULT_EXPANSION_IDS,
+  ): Promise<Lobby> {
     const normalizedHostName = hostName.trim();
     if (!normalizedHostName) throw new Error("A host name is required.");
 
@@ -114,6 +125,7 @@ export class Registry {
         seats: [{ id: hostId, name: normalizedHostName, isBot: false, connected: true }],
         status: "lobby",
         deckId,
+        expansionIds: [...expansionIds],
         createdAt: Date.now(),
       };
       const created = await this.store.persistence.create({ lobby, state: null });
@@ -153,20 +165,49 @@ export class Registry {
     return seat;
   }
 
-  async addBot(gameId: string): Promise<LobbySeat | undefined> {
+  async addBot(
+    gameId: string,
+    playerId: string,
+    botDifficulty: BotDifficulty = DEFAULT_BOT_DIFFICULTY,
+  ): Promise<LobbySeat | undefined> {
     const rec = await this.getRecord(gameId);
-    if (!rec || rec.lobby.status !== "lobby" || rec.lobby.seats.length >= 8) return undefined;
+    if (
+      !rec ||
+      rec.lobby.status !== "lobby" ||
+      rec.lobby.hostId !== playerId ||
+      rec.lobby.seats.length >= 8
+    ) {
+      return undefined;
+    }
 
     const botNum = rec.lobby.seats.filter((s) => s.isBot).length + 1;
     const seat: LobbySeat = {
       id: `p_${gameId}_${rec.lobby.seats.length}`,
       name: `Bot ${botNum}`,
       isBot: true,
+      botDifficulty,
       connected: true,
     };
     rec.lobby.seats.push(seat);
     await this.persistAndFlush(rec);
     return seat;
+  }
+
+  async setBotDifficulty(
+    gameId: string,
+    playerId: string,
+    botId: string,
+    botDifficulty: BotDifficulty,
+  ): Promise<Lobby | undefined> {
+    const rec = await this.getRecord(gameId);
+    if (!rec || rec.lobby.status !== "lobby" || rec.lobby.hostId !== playerId) return undefined;
+
+    const bot = rec.lobby.seats.find((seat) => seat.id === botId && seat.isBot);
+    if (!bot) return undefined;
+
+    bot.botDifficulty = botDifficulty;
+    await this.persistAndFlush(rec);
+    return rec.lobby;
   }
 
   async removeSeat(gameId: string, seatId: string): Promise<void> {
@@ -186,6 +227,19 @@ export class Registry {
     return rec.lobby;
   }
 
+  async setLobbyExpansions(
+    gameId: string,
+    playerId: string,
+    expansionIds: ExpansionId[],
+  ): Promise<Lobby | undefined> {
+    const rec = await this.getRecord(gameId);
+    if (!rec || rec.lobby.status !== "lobby" || rec.lobby.hostId !== playerId) return undefined;
+
+    rec.lobby.expansionIds = [...new Set(expansionIds)];
+    await this.persistAndFlush(rec);
+    return rec.lobby;
+  }
+
   async startGame(gameId: string): Promise<boolean> {
     const rec = await this.getRecord(gameId);
     if (!rec || rec.lobby.status !== "lobby" || rec.lobby.seats.length < 2) return false;
@@ -193,7 +247,13 @@ export class Registry {
     rec.engine = createGame({
       gameId,
       deckId: rec.lobby.deckId,
-      seats: rec.lobby.seats.map((s) => ({ id: s.id, name: s.name, isBot: s.isBot })),
+      expansionIds: rec.lobby.expansionIds,
+      seats: rec.lobby.seats.map((s) => ({
+        id: s.id,
+        name: s.name,
+        isBot: s.isBot,
+        botDifficulty: s.botDifficulty,
+      })),
     });
     rec.lobby.status = "active";
     this.wireEngine(rec);
@@ -317,7 +377,10 @@ export class Registry {
     if (existing) return existing;
 
     persisted.lobby.deckId ??= DEFAULT_DECK_ID;
+    persisted.lobby.expansionIds ??= [];
     if (persisted.state) persisted.state.deckId ??= persisted.lobby.deckId;
+    if (persisted.state) persisted.state.expansionIds ??= persisted.lobby.expansionIds;
+    this.normalizeBotDifficulties(persisted.lobby, persisted.state);
 
     const rec: GameRecord = {
       lobby: persisted.lobby,
@@ -347,7 +410,21 @@ export class Registry {
 
   private ensureDeckId(rec: GameRecord): void {
     rec.lobby.deckId ??= DEFAULT_DECK_ID;
+    rec.lobby.expansionIds ??= [];
     if (rec.engine) rec.engine.state.deckId ??= rec.lobby.deckId;
+    if (rec.engine) rec.engine.state.expansionIds ??= rec.lobby.expansionIds;
+    this.normalizeBotDifficulties(rec.lobby, rec.engine?.state);
+  }
+
+  private normalizeBotDifficulties(lobby: Lobby, state?: GameState | null): void {
+    for (const seat of lobby.seats) {
+      if (seat.isBot) seat.botDifficulty ??= DEFAULT_BOT_DIFFICULTY;
+      else seat.botDifficulty = undefined;
+    }
+    for (const player of state?.players ?? []) {
+      if (player.isBot) player.botDifficulty ??= DEFAULT_BOT_DIFFICULTY;
+      else player.botDifficulty = undefined;
+    }
   }
 
   private wireEngine(rec: GameRecord): void {

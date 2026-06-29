@@ -112,7 +112,9 @@ function Home() {
     }
     setBusy(true);
     try {
-      const res = await createLobby({ data: { hostName, deckId: DEFAULT_DECK_ID } });
+      const res = await createLobby({
+        data: { hostName, deckId: DEFAULT_DECK_ID, expansionIds: [] },
+      });
       sessionStorage.setItem(`uu.you.${res.gameId}`, res.youId);
       await navigate({ to: "/lobby/$gameId", params: { gameId: res.gameId } });
     } catch (e) {

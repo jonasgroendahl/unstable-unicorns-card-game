@@ -1,16 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { allDefinitions, getDefinition, hasBehavior } from "./index";
 import { CARD_DATA } from "./cardData";
-import { DECK_IDS, definitionsForDeck } from "../decks";
+import { DECK_IDS, definitionsForDeck, definitionsForExpansion } from "../decks";
 
 describe("card data integrity", () => {
   it("has a 127-card manifest for every supported deck", () => {
-    expect(CARD_DATA.length).toBe(93);
+    expect(CARD_DATA.length).toBe(131);
     for (const deckId of DECK_IDS) {
       const definitions = definitionsForDeck(deckId);
       expect(definitions.length).toBe(84);
       expect(definitions.reduce((total, definition) => total + definition.copies, 0)).toBe(127);
     }
+  });
+
+  it("adds the complete 54-card Adventures expansion to either base deck", () => {
+    const expansion = definitionsForExpansion("adventures-second-edition");
+    expect(expansion).toHaveLength(38);
+    expect(expansion.reduce((total, definition) => total + definition.copies, 0)).toBe(54);
+
+    for (const deckId of DECK_IDS) {
+      const combined = definitionsForDeck(deckId, undefined, ["adventures-second-edition"]);
+      expect(combined.reduce((total, definition) => total + definition.copies, 0)).toBe(181);
+    }
+  });
+
+  it("uses the official Adventures removals in a 2-player game", () => {
+    const expansion = definitionsForExpansion("adventures-second-edition", 2);
+    expect(expansion.reduce((total, definition) => total + definition.copies, 0)).toBe(36);
   });
 
   it("every card has a definition", () => {

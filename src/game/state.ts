@@ -1,9 +1,18 @@
 // Game state construction and pure zone helpers.
 
-import { definitionsForDeck, type DeckId } from "./decks";
+import { definitionsForDeck, type DeckId, type ExpansionId } from "./decks";
 import { makeInstanceId } from "./ids";
 import { shuffle } from "./rng";
-import type { CardInstance, GamePlayer, GameState, InstanceId, PlayerId, Zone } from "./types";
+import {
+  DEFAULT_BOT_DIFFICULTY,
+  type BotDifficulty,
+  type CardInstance,
+  type GamePlayer,
+  type GameState,
+  type InstanceId,
+  type PlayerId,
+  type Zone,
+} from "./types";
 
 const STARTING_HAND = 5;
 export const HAND_LIMIT = 7;
@@ -12,6 +21,7 @@ export interface SeatConfig {
   id: PlayerId;
   name: string;
   isBot: boolean;
+  botDifficulty?: BotDifficulty;
 }
 
 /**
@@ -21,10 +31,11 @@ export interface SeatConfig {
 function buildCards(
   deckId: DeckId,
   playerCount: number,
+  expansionIds: readonly ExpansionId[],
 ): { deck: CardInstance[]; babies: CardInstance[] } {
   const deck: CardInstance[] = [];
   const babies: CardInstance[] = [];
-  for (const def of definitionsForDeck(deckId, playerCount)) {
+  for (const def of definitionsForDeck(deckId, playerCount, expansionIds)) {
     for (let i = 0; i < def.copies; i++) {
       const inst: CardInstance = {
         instanceId: makeInstanceId(),
@@ -44,6 +55,7 @@ export function createInitialState(
   seed: number,
   gameId: string,
   deckId: DeckId,
+  expansionIds: readonly ExpansionId[] = [],
 ): GameState {
   if (seats.length < 2 || seats.length > 8) {
     throw new Error(`Unstable Unicorns supports 2–8 players, got ${seats.length}`);
@@ -53,10 +65,11 @@ export function createInitialState(
     id: s.id,
     name: s.name,
     isBot: s.isBot,
+    botDifficulty: s.isBot ? (s.botDifficulty ?? DEFAULT_BOT_DIFFICULTY) : undefined,
     connected: true,
   }));
 
-  const { deck, babies } = buildCards(deckId, seats.length);
+  const { deck, babies } = buildCards(deckId, seats.length, expansionIds);
   const instances: Record<InstanceId, CardInstance> = {};
   for (const c of [...deck, ...babies]) instances[c.instanceId] = c;
 
@@ -74,6 +87,7 @@ export function createInitialState(
   const state: GameState = {
     gameId,
     deckId,
+    expansionIds: [...expansionIds],
     rngSeed,
     players,
     instances,
@@ -90,6 +104,7 @@ export function createInitialState(
     actionsRemaining: { plays: 1, draws: 0 },
     playedThisTurn: false,
     lastAutoDrawn: null,
+    skipDrawPhase: false,
     pendingDecisions: [],
     reaction: null,
     status: "active",

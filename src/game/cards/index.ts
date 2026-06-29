@@ -8,6 +8,7 @@ import { MAGIC_EFFECTS } from "./effects/magic";
 import { UPGRADE_EFFECTS } from "./effects/upgrades";
 import { DOWNGRADE_EFFECTS } from "./effects/downgrades";
 import { INSTANT_EFFECTS, BABY_BEHAVIOR } from "./effects/instants";
+import { ADVENTURES_EFFECTS } from "./effects/adventures";
 
 type Behavior = Partial<
   Pick<
@@ -18,6 +19,7 @@ type Behavior = Partial<
     | "replacement"
     | "canPlay"
     | "unneighable"
+    | "instantKind"
     | "grantsExtraPlays"
     | "grantsExtraDraws"
     | "unicornValue"
@@ -51,6 +53,7 @@ function behaviorFor(slug: string, kind: CardKind): Behavior {
     UPGRADE_EFFECTS[slug] ??
     DOWNGRADE_EFFECTS[slug] ??
     INSTANT_EFFECTS[slug] ??
+    ADVENTURES_EFFECTS[slug] ??
     {}
   );
 }
@@ -66,6 +69,7 @@ for (const data of CARD_DATA) {
     text: data.text,
     image: data.image,
     copies: data.copies,
+    setId: data.setId,
     ...behaviorFor(data.slug, data.kind),
   };
 }

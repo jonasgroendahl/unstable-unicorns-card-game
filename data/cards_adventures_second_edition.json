@@ -1,0 +1,306 @@
+[
+  {
+    "name": "Baby Unicorn (Fisherman)",
+    "slug": "baby-unicorn-fisherman",
+    "type": "Baby Unicorn",
+    "copies": 1,
+    "text": "If this card would be sacrificed, destroyed, or returned to your hand, return it to the Nursery instead.",
+    "image": "/cards/adventures/baby-unicorn-fisherman.png"
+  },
+  {
+    "name": "Baby Unicorn (Forest)",
+    "slug": "baby-unicorn-forest",
+    "type": "Baby Unicorn",
+    "copies": 1,
+    "text": "If this card would be sacrificed, destroyed, or returned to your hand, return it to the Nursery instead.",
+    "image": "/cards/adventures/baby-unicorn-forest.png"
+  },
+  {
+    "name": "Baby Unicorn (Pirate)",
+    "slug": "baby-unicorn-pirate",
+    "type": "Baby Unicorn",
+    "copies": 1,
+    "text": "If this card would be sacrificed, destroyed, or returned to your hand, return it to the Nursery instead.",
+    "image": "/cards/adventures/baby-unicorn-pirate.png"
+  },
+  {
+    "name": "Baby Unicorn (Safari)",
+    "slug": "baby-unicorn-safari",
+    "type": "Baby Unicorn",
+    "copies": 1,
+    "text": "If this card would be sacrificed, destroyed, or returned to your hand, return it to the Nursery instead.",
+    "image": "/cards/adventures/baby-unicorn-safari.png"
+  },
+  {
+    "name": "Eager Adventurer Unicorn",
+    "slug": "eager-adventurer-unicorn",
+    "type": "Basic Unicorn",
+    "copies": 3,
+    "text": "OOOH! What's that??",
+    "image": "/cards/adventures/eager-adventurer-unicorn.png"
+  },
+  {
+    "name": "Glamping Unicorn",
+    "slug": "glamping-unicorn",
+    "type": "Basic Unicorn",
+    "copies": 3,
+    "text": "What do you mean I'm not roughing it? My phone has, like, zero bars?",
+    "image": "/cards/adventures/glamping-unicorn.png"
+  },
+  {
+    "name": "Indoor Rockclimber Unicorn",
+    "slug": "indoor-rockclimber-unicorn",
+    "type": "Basic Unicorn",
+    "copies": 3,
+    "text": "Always reach for new heights. Just don't bump your head on the ceiling.",
+    "image": "/cards/adventures/indoor-rockclimber-unicorn.png"
+  },
+  {
+    "name": "Land Lubber Unicorn",
+    "slug": "land-lubber-unicorn",
+    "type": "Basic Unicorn",
+    "copies": 3,
+    "text": "A little help? I'm still learning the ropes.",
+    "image": "/cards/adventures/land-lubber-unicorn.png"
+  },
+  {
+    "name": "Bungee Jumping Unicorn",
+    "slug": "bungee-jumping-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "If this card is sacrificed or destroyed, you may: SACRIFICE a Downgrade card. OR Return this card to your hand.",
+    "image": "/cards/adventures/bungee-jumping-unicorn.png"
+  },
+  {
+    "name": "Cutthroat Captain Unicorn",
+    "slug": "cutthroat-captain-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, you may: STEAL a Baby Unicorn card. OR Bring a Basic Unicorn card from the discard pile into your Stable.",
+    "image": "/cards/adventures/cutthroat-captain-unicorn.png"
+  },
+  {
+    "name": "Extreme Adventurer Unicorn",
+    "slug": "extreme-adventurer-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "Basic Unicorn cards cannot enter your Stable. If this card is in your Stable at the beginning of your turn, you may DRAW a card.",
+    "image": "/cards/adventures/extreme-adventurer-unicorn.png"
+  },
+  {
+    "name": "Fearless Unicorn",
+    "slug": "fearless-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "If this card is sacrificed or destroyed, you may add an Instant card from the discard pile to your hand.",
+    "image": "/cards/adventures/fearless-unicorn.png"
+  },
+  {
+    "name": "First Mer-mate Unicorn",
+    "slug": "first-mer-mate-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "If this card is sacrificed or destroyed, you may: DRAW 2 cards. OR Bring a Basic Unicorn card from your hand into your Stable.",
+    "image": "/cards/adventures/first-mer-mate-unicorn.png"
+  },
+  {
+    "name": "Fisherman Unicorn",
+    "slug": "fisherman-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, you may look at another player's hand. Choose a card and add it to your hand.",
+    "image": "/cards/adventures/fisherman-unicorn.png"
+  },
+  {
+    "name": "Hornswoggler Unicorn",
+    "slug": "hornswoggler-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, you may: DISCARD your hand, then DRAW 3 cards. OR Trade hands with any other player.",
+    "image": "/cards/adventures/hornswoggler-unicorn.png"
+  },
+  {
+    "name": "Pillaging Pirate Unicorn",
+    "slug": "pillaging-pirate-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, you may: STEAL an Upgrade card. OR Move a Downgrade card in your Stable to another player's Stable.",
+    "image": "/cards/adventures/pillaging-pirate-unicorn.png"
+  },
+  {
+    "name": "Salty Seadogicorn",
+    "slug": "salty-seadogicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, you may: Force each other player to DISCARD a card. OR DRAW a card.",
+    "image": "/cards/adventures/salty-seadogicorn.png"
+  },
+  {
+    "name": "Stowaway Unicorn",
+    "slug": "stowaway-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "When this card enters your Stable, you may DRAW a card and reveal it. If it is a Unicorn, Upgrade, or Downgrade card, bring it into your Stable.",
+    "image": "/cards/adventures/stowaway-unicorn.png"
+  },
+  {
+    "name": "Survivalist Unicorn",
+    "slug": "survivalist-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "If this card is in your Stable at the beginning of your turn, you may DISCARD a card, then SACRIFICE a Downgrade card.",
+    "image": "/cards/adventures/survivalist-unicorn.png"
+  },
+  {
+    "name": "Vagabond Unicorn",
+    "slug": "vagabond-unicorn",
+    "type": "Magical Unicorn",
+    "copies": 1,
+    "text": "If this card is in your Stable at the beginning of your turn, you may DISCARD a card, then pull a card at random from another player's hand.",
+    "image": "/cards/adventures/vagabond-unicorn.png"
+  },
+  {
+    "name": "Glowing Horn",
+    "slug": "glowing-horn",
+    "type": "Magic",
+    "copies": 1,
+    "text": "SACRIFICE a card, then DESTROY a card. OR Bring a card from the discard pile into your Stable.",
+    "image": "/cards/adventures/glowing-horn.png"
+  },
+  {
+    "name": "Metal Detector",
+    "slug": "metal-detector",
+    "type": "Magic",
+    "copies": 2,
+    "text": "DRAW 3 cards and DISCARD a card. OR Add a card from the discard pile to your hand.",
+    "image": "/cards/adventures/metal-detector.png"
+  },
+  {
+    "name": "Mysterious Compass",
+    "slug": "mysterious-compass",
+    "type": "Magic",
+    "copies": 1,
+    "text": "DISCARD 3 cards, then take another turn. OR Move a Unicorn card in your Stable to another player's Stable, then STEAL a Unicorn card from that player's Stable.",
+    "image": "/cards/adventures/mysterious-compass.png"
+  },
+  {
+    "name": "Silver Tongue",
+    "slug": "silver-tongue",
+    "type": "Magic",
+    "copies": 1,
+    "text": "Force each other player to reveal their hand to you. OR Force each other player to give you a card from their hand.",
+    "image": "/cards/adventures/silver-tongue.png"
+  },
+  {
+    "name": "The Great Baby Heist",
+    "slug": "the-great-baby-heist",
+    "type": "Magic",
+    "copies": 2,
+    "text": "DISCARD 2 cards, then bring 2 Baby Unicorn cards from the Nursery into your Stable.",
+    "image": "/cards/adventures/the-great-baby-heist.png"
+  },
+  {
+    "name": "Unicorn Shovel",
+    "slug": "unicorn-shovel",
+    "type": "Magic",
+    "copies": 1,
+    "text": "Bring a Unicorn card from the discard pile into your Stable. OR Add 2 Unicorn cards from the discard pile to your hand.",
+    "image": "/cards/adventures/unicorn-shovel.png"
+  },
+  {
+    "name": "Ancient Ritual",
+    "slug": "ancient-ritual",
+    "type": "Upgrade",
+    "copies": 1,
+    "text": "If this card is in your Stable at the beginning of your turn, you may SACRIFICE a Unicorn card, then DRAW 3 cards.",
+    "image": "/cards/adventures/ancient-ritual.png"
+  },
+  {
+    "name": "Pit Covered in Leaves",
+    "slug": "pit-covered-in-leaves",
+    "type": "Upgrade",
+    "copies": 2,
+    "text": "If this card is in your Stable at the beginning of your turn, you may SACRIFICE this card, then STEAL a Unicorn card.",
+    "image": "/cards/adventures/pit-covered-in-leaves.png"
+  },
+  {
+    "name": "Royal Hooves",
+    "slug": "royal-hooves",
+    "type": "Upgrade",
+    "copies": 1,
+    "text": "If this card is in your Stable at the beginning of your turn, you may pull a card at random from another player's hand instead of drawing a card for your Draw phase.",
+    "image": "/cards/adventures/royal-hooves.png"
+  },
+  {
+    "name": "Unicorn Survival Kit",
+    "slug": "unicorn-survival-kit",
+    "type": "Upgrade",
+    "copies": 1,
+    "text": "Each time one of your Unicorn cards would be sacrificed or destroyed, you may DISCARD 2 cards instead.",
+    "image": "/cards/adventures/unicorn-survival-kit.png"
+  },
+  {
+    "name": "Broken Sundial",
+    "slug": "broken-sundial",
+    "type": "Downgrade",
+    "copies": 1,
+    "text": "Skip your Beginning of Turn phase.",
+    "image": "/cards/adventures/broken-sundial.png"
+  },
+  {
+    "name": "Extremely Small Backpack",
+    "slug": "extremely-small-backpack",
+    "type": "Downgrade",
+    "copies": 1,
+    "text": "Each time you DRAW any number of cards, DISCARD a card. If at any time you have no cards in your hand, move this card to another player's Stable.",
+    "image": "/cards/adventures/extremely-small-backpack.png"
+  },
+  {
+    "name": "The Black Spot",
+    "slug": "the-black-spot",
+    "type": "Downgrade",
+    "copies": 1,
+    "text": "You cannot win the game if you have a Basic Unicorn card in your Stable.",
+    "image": "/cards/adventures/the-black-spot.png"
+  },
+  {
+    "name": "Unicorn Overboard",
+    "slug": "unicorn-overboard",
+    "type": "Downgrade",
+    "copies": 1,
+    "text": "Each time one of your Unicorn cards is sacrificed or destroyed, DISCARD a card.",
+    "image": "/cards/adventures/unicorn-overboard.png"
+  },
+  {
+    "name": "Fishing Rod",
+    "slug": "fishing-rod",
+    "type": "Instant",
+    "copies": 2,
+    "text": "Play this card when another player tries to STEAL a card. Move the card that would be stolen into your Stable instead.",
+    "image": "/cards/adventures/fishing-rod.png"
+  },
+  {
+    "name": "Flare Gun",
+    "slug": "flare-gun",
+    "type": "Instant",
+    "copies": 2,
+    "text": "Play this card at the beginning of another player's turn. That player must skip their Beginning of Turn phase and their Draw phase.",
+    "image": "/cards/adventures/flare-gun.png"
+  },
+  {
+    "name": "Neigh, Mate!",
+    "slug": "neigh-mate",
+    "type": "Instant",
+    "copies": 3,
+    "text": "Play this card when another player tries to play a card. Stop their card from being played and send it to the discard pile.",
+    "image": "/cards/adventures/neigh-mate.png"
+  },
+  {
+    "name": "Unicorn Net",
+    "slug": "unicorn-net",
+    "type": "Instant",
+    "copies": 2,
+    "text": "Play this card when any player tries to SACRIFICE or DESTROY a card. Add that card to your hand instead.",
+    "image": "/cards/adventures/unicorn-net.png"
+  }
+]

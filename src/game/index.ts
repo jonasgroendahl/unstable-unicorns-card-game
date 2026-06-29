@@ -6,7 +6,7 @@ import { randomSeed } from "./rng";
 import { createInitialState, type SeatConfig } from "./state";
 import { sanitizeFor, type GameView } from "./view";
 import type { GameState, PlayerId } from "./types";
-import { DEFAULT_DECK_ID, type DeckId } from "./decks";
+import { DEFAULT_DECK_ID, DEFAULT_EXPANSION_IDS, type DeckId, type ExpansionId } from "./decks";
 
 export { GameEngine } from "./engine/GameEngine";
 export { EngineError } from "./engine/GameEngine";
@@ -17,11 +17,16 @@ export {
   DECK_OPTIONS,
   DECKS,
   DEFAULT_DECK_ID,
+  DEFAULT_EXPANSION_IDS,
+  EXPANSION_OPTIONS,
+  EXPANSIONS,
   definitionsForDeck,
+  definitionsForExpansion,
   isDeckId,
+  isExpansionId,
   isExcludedInTwoPlayer,
 } from "./decks";
-export type { DeckId } from "./decks";
+export type { DeckId, ExpansionId } from "./decks";
 export type * from "./types";
 
 export interface CreateGameOptions {
@@ -29,6 +34,7 @@ export interface CreateGameOptions {
   seats: SeatConfig[];
   seed?: number;
   deckId?: DeckId;
+  expansionIds?: ExpansionId[];
   /** Delay between bot steps so their actions remain visible. */
   botActionDelayMs?: number;
 }
@@ -36,7 +42,13 @@ export interface CreateGameOptions {
 /** Build a fresh engine, deal the game, wire the bot auto-responder, begin turn 1. */
 export function createGame(opts: CreateGameOptions): GameEngine {
   const seed = opts.seed ?? randomSeed();
-  const state = createInitialState(opts.seats, seed, opts.gameId, opts.deckId ?? DEFAULT_DECK_ID);
+  const state = createInitialState(
+    opts.seats,
+    seed,
+    opts.gameId,
+    opts.deckId ?? DEFAULT_DECK_ID,
+    opts.expansionIds ?? DEFAULT_EXPANSION_IDS,
+  );
   const engine = new GameEngine(state);
   const botActionDelayMs = opts.botActionDelayMs;
   engine.onBotTurn = () => runBots(engine, botActionDelayMs);

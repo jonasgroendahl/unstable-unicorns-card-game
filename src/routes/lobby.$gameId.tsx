@@ -17,11 +17,26 @@ import {
 import { Badge } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
 import { toast } from "sonner";
-import { addBotToLobby, getLobby, removeSeat, setLobbyDeck, startGame } from "#/server/actions.ts";
+import {
+  addBotToLobby,
+  getLobby,
+  removeSeat,
+  setBotDifficulty,
+  setLobbyDeck,
+  setLobbyExpansions,
+  startGame,
+} from "#/server/actions.ts";
 import type { Lobby } from "#/server/registry.ts";
 import { useSessionSeatId } from "#/lib/useSessionSeatId.ts";
-import { DECKS } from "#/game/decks.ts";
+import { DECKS, EXPANSIONS } from "#/game/decks.ts";
+import { DEFAULT_BOT_DIFFICULTY } from "#/game/types.ts";
 import { DeckPicker } from "#/components/game/DeckPicker.tsx";
+import {
+  AddBotControl,
+  BOT_DIFFICULTY_LABELS,
+  BotDifficultyBadge,
+  BotDifficultyToggle,
+} from "#/components/game/BotDifficultyControl.tsx";
 import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
 
 export const Route = createFileRoute("/lobby/$gameId")({ component: LobbyView });
@@ -154,7 +169,7 @@ function LobbyView() {
                       {seat.id === youId
                         ? "You"
                         : seat.isBot
-                          ? "Bot player"
+                          ? `${BOT_DIFFICULTY_LABELS[seat.botDifficulty ?? DEFAULT_BOT_DIFFICULTY]} bot`
                           : seat.connected
                             ? "Ready to play"
                             : "Reconnecting…"}
@@ -165,6 +180,32 @@ function LobbyView() {
                       <Crown /> Host
                     </Badge>
                   )}
+                  {seat.isBot &&
+                    (isHost ? (
+                      <BotDifficultyToggle
+                        compact
+                        value={seat.botDifficulty ?? DEFAULT_BOT_DIFFICULTY}
+                        ariaLabel={`Difficulty for ${seat.name}`}
+                        onChange={async (difficulty) => {
+                          try {
+                            setLobby(
+                              await setBotDifficulty({
+                                data: {
+                                  gameId,
+                                  playerId: youId,
+                                  botId: seat.id,
+                                  difficulty,
+                                },
+                              }),
+                            );
+                          } catch (error) {
+                            toast.error((error as Error).message);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <BotDifficultyBadge difficulty={seat.botDifficulty} />
+                    ))}
                   {isHost && seat.id !== lobby.hostId && (
                     <button
                       className="uu-lobby-remove"
@@ -204,15 +245,19 @@ function LobbyView() {
                   : "Invite one more player or add a bot to begin."}
               </p>
               {isHost && (
-                <Button
-                  className="uu-lobby-add-bot"
+                <AddBotControl
                   disabled={lobby.seats.length >= 8}
-                  onClick={() =>
-                    addBotToLobby({ data: { gameId } }).then((next) => next && setLobby(next))
-                  }
-                >
-                  <Bot data-icon="inline-start" /> Add bot
-                </Button>
+                  onAdd={async (difficulty) => {
+                    try {
+                      const next = await addBotToLobby({
+                        data: { gameId, playerId: youId, difficulty },
+                      });
+                      if (next) setLobby(next);
+                    } catch (error) {
+                      toast.error((error as Error).message);
+                    }
+                  }}
+                />
               )}
             </div>
           </div>
@@ -230,12 +275,28 @@ function LobbyView() {
 
             <DeckPicker
               value={lobby.deckId}
+              expansionIds={lobby.expansionIds}
               playerCount={lobby.seats.length}
               onChange={
                 isHost
                   ? async (deckId) => {
                       try {
                         setLobby(await setLobbyDeck({ data: { gameId, playerId: youId, deckId } }));
+                      } catch (error) {
+                        toast.error((error as Error).message);
+                      }
+                    }
+                  : undefined
+              }
+              onExpansionChange={
+                isHost
+                  ? async (expansionIds) => {
+                      try {
+                        setLobby(
+                          await setLobbyExpansions({
+                            data: { gameId, playerId: youId, expansionIds },
+                          }),
+                        );
                       } catch (error) {
                         toast.error((error as Error).message);
                       }
@@ -254,8 +315,16 @@ function LobbyView() {
                 <strong>{lobby.seats.length}/8</strong>
               </div>
               <div>
-                <span>Deck</span>
+                <span>Base deck</span>
                 <strong>{DECKS[lobby.deckId].shortName}</strong>
+              </div>
+              <div>
+                <span>Expansion</span>
+                <strong>
+                  {lobby.expansionIds.length === 0
+                    ? "None"
+                    : lobby.expansionIds.map((id) => EXPANSIONS[id].shortName).join(", ")}
+                </strong>
               </div>
               <div>
                 <span>Victory</span>

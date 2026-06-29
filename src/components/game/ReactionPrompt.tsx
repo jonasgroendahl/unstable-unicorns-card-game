@@ -36,16 +36,35 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
   const pct = Math.max(0, Math.min(1, remaining / REACTION_WINDOW_MS));
   const seconds = Math.ceil(Math.max(0, remaining) / 1000);
   const latestNeigh = reaction.chain.at(-1);
+  const isNeighWindow = reaction.kind === "neigh";
   const isCounterNeigh = Boolean(latestNeigh);
   const wouldCancel = reaction.chain.length % 2 === 1;
   const targetName = reaction.targetCard
     ? getCardPresentation(themeId, reaction.targetCard).name
     : "A card";
+  const windowLabel =
+    reaction.kind === "neigh"
+      ? isCounterNeigh
+        ? "Counter-Neigh window"
+        : "Neigh window"
+      : reaction.kind === "fishingRod"
+        ? "Steal response"
+        : reaction.kind === "flareGun"
+          ? "Turn-start response"
+          : "Sacrifice / destroy response";
+  const question =
+    reaction.kind === "neigh"
+      ? "Will anyone play a Neigh?"
+      : reaction.kind === "fishingRod"
+        ? "Will anyone cast a Fishing Rod?"
+        : reaction.kind === "flareGun"
+          ? "Will anyone fire a Flare Gun?"
+          : "Will anyone throw a Unicorn Net?";
 
   return (
     <section
       className="uu-reaction-layer pointer-events-none fixed inset-x-0 z-30 flex justify-center px-3"
-      aria-label="Neigh response window"
+      aria-label={`${windowLabel} response window`}
     >
       <div className="uu-glass uu-reaction-dock pointer-events-auto w-[min(94vw,760px)] overflow-y-auto rounded-2xl p-3 shadow-2xl">
         <div className="flex items-start gap-3">
@@ -59,11 +78,11 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">
-                {isCounterNeigh ? "Counter-Neigh window" : "Neigh window"}
-              </Badge>
+              <Badge variant="secondary">{windowLabel}</Badge>
               <span className="truncate text-sm font-bold text-amber-100">
-                {targetName} by {playerName(reaction.targetByPlayer)}
+                {reaction.kind === "flareGun"
+                  ? `${playerName(reaction.targetByPlayer)}'s turn is beginning`
+                  : `${targetName} by ${playerName(reaction.targetByPlayer)}`}
               </span>
             </div>
             <p className="mt-1 hidden items-center gap-1.5 text-[11px] text-white/55 sm:flex">
@@ -85,7 +104,7 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
           </div>
         </div>
 
-        {latestNeigh ? (
+        {isNeighWindow && latestNeigh ? (
           <NeighReveal
             key={latestNeigh.card.instanceId}
             card={latestNeigh.card}
@@ -94,16 +113,16 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
           />
         ) : (
           <div className="my-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-center">
-            <p className="uu-display text-base font-bold text-amber-200">
-              Will anyone play a Neigh?
-            </p>
+            <p className="uu-display text-base font-bold text-amber-200">{question}</p>
             <p className="text-[11px] text-white/50">
-              An odd number of Neighs cancels the original card.
+              {isNeighWindow
+                ? "An odd number of Neighs cancels the original card."
+                : "Special Instant cards can redirect the action before it resolves."}
             </p>
           </div>
         )}
 
-        {reaction.chain.length > 0 && (
+        {isNeighWindow && reaction.chain.length > 0 && (
           <div className="mb-2 flex flex-wrap items-center justify-center gap-1.5 text-xs">
             {reaction.chain.map((link) => (
               <Badge key={link.card.instanceId} variant="secondary">
@@ -126,7 +145,9 @@ export function ReactionPrompt({ reaction, playerName, onNeigh, onPass }: Reacti
                 <div className="text-[10px] text-white/45">
                   {latestNeigh
                     ? `Play an interruption on ${playerName(latestNeigh.byPlayer)}'s ${getCardPresentation(themeId, latestNeigh.card).name}, or pass.`
-                    : "Play an interruption card or pass."}
+                    : isNeighWindow
+                      ? "Play an interruption card or pass."
+                      : "Play the matching Instant card or pass."}
                 </div>
               </div>
               <Button variant="secondary" size="sm" onClick={onPass}>

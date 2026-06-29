@@ -155,6 +155,7 @@ function DebugUi() {
     return {
       gameId: "debug-ui",
       deckId: "base-first-edition",
+      expansionIds: [],
       status: "active",
       phase: "action",
       viewerId: activeViewerId,

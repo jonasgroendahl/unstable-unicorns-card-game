@@ -10,7 +10,7 @@ import { createGame } from "../game/index";
 import { sanitizeFor, type GameView } from "../game/view";
 import type { InstanceId, PlayerId } from "../game/types";
 import type { SeatConfig } from "../game/state";
-import type { DeckId } from "../game/decks";
+import type { DeckId, ExpansionId } from "../game/decks";
 import {
   drawForTurn as rpcDraw,
   endTurn as rpcEndTurn,
@@ -39,8 +39,8 @@ export class LocalGameClient implements GameClient {
   engine: GameEngine;
   private viewers = new Map<PlayerId, Set<(v: GameView) => void>>();
 
-  constructor(seats: SeatConfig[], seed?: number, deckId?: DeckId) {
-    this.engine = createGame({ gameId: "local", seats, seed, deckId });
+  constructor(seats: SeatConfig[], seed?: number, deckId?: DeckId, expansionIds?: ExpansionId[]) {
+    this.engine = createGame({ gameId: "local", seats, seed, deckId, expansionIds });
     this.engine.subscribe(() => this.emit());
     this.emit();
   }

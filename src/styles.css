@@ -2697,6 +2697,30 @@ a {
   text-transform: uppercase;
 }
 
+.uu-lobby-bot-difficulty-badge {
+  flex: 0 0 auto;
+  font-size: 0.48rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.uu-bot-difficulty-toggle {
+  flex: 0 0 auto;
+}
+
+.uu-bot-difficulty-toggle [data-slot="toggle-group-item"] {
+  min-height: 2rem;
+  padding-inline: 0.55rem;
+  font-size: 0.55rem;
+  font-weight: 900;
+}
+
+.uu-bot-difficulty-toggle-compact [data-slot="toggle-group-item"] {
+  min-height: 1.65rem;
+  padding-inline: 0.38rem;
+  font-size: 0.45rem;
+}
+
 .uu-lobby-remove {
   display: grid;
   width: 1.8rem;
@@ -2756,6 +2780,28 @@ a {
   height: 0.8rem;
   flex: 0 0 auto;
   color: #6e42a5;
+}
+
+.uu-lobby-add-bot-control {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.uu-lobby-add-bot-label {
+  color: #806d99;
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.uu-lobby-add-bot-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .uu-lobby-add-bot {
@@ -3119,8 +3165,25 @@ a {
     flex-direction: column;
   }
 
-  .uu-lobby-add-bot {
+  .uu-lobby-add-bot-control {
     width: 100%;
+    align-items: stretch;
+  }
+
+  .uu-lobby-add-bot-actions {
+    width: 100%;
+  }
+
+  .uu-lobby-add-bot-actions .uu-bot-difficulty-toggle {
+    flex: 1;
+  }
+
+  .uu-lobby-add-bot-actions .uu-bot-difficulty-toggle [data-slot="toggle-group-item"] {
+    flex: 1;
+  }
+
+  .uu-lobby-add-bot {
+    min-width: 7rem;
   }
 
   .uu-lobby .uu-deck-options {
