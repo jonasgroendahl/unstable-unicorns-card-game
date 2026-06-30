@@ -136,7 +136,7 @@ export function DeckPicker({
 
       <span className="mt-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
         <Compass data-icon="inline-start" /> Expansion decks
-        <Badge variant="outline">Optional</Badge>
+        <Badge variant="secondary">Optional</Badge>
       </span>
       <ToggleGroup
         type="multiple"
