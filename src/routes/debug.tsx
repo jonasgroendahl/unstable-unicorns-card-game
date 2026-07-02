@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { Eye } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft, Eye } from "lucide-react";
 import { Button } from "#/components/ui/button.tsx";
 import { GameBoard } from "#/components/game/GameBoard.tsx";
 import { LocalGameClient } from "#/lib/gameClient.ts";
@@ -41,6 +41,13 @@ function SetupScreen({ onStart }: { onStart: (s: Setup) => void }) {
   return (
     <div className="uu-root uu-starfield flex min-h-dvh items-center justify-center p-6">
       <div className="uu-glass relative z-10 w-full max-w-md rounded-2xl p-6">
+        <Link
+          to="/"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-white/70 transition-colors hover:text-white"
+        >
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Main menu
+        </Link>
         <h1 className="uu-display mb-1 text-2xl font-bold text-amber-200">Quick Play</h1>
         <p className="mb-5 text-sm text-white/60">
           Run a full game locally — no lobby needed. Hotseat humans share this screen; bots play

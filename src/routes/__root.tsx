@@ -1,6 +1,8 @@
 import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
 import { GameThemeProvider } from "#/components/theme/GameThemeProvider.tsx";
 import { Toaster } from "#/components/ui/sonner.tsx";
+import { TooltipProvider } from "#/components/ui/tooltip.tsx";
+import { VoiceRouteProvider } from "#/components/voice/VoiceSessionProvider.tsx";
 
 import appCss from "../styles.css?url";
 
@@ -60,8 +62,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <GameThemeProvider>
-          {children}
-          <Toaster theme="dark" position="top-center" richColors />
+          <TooltipProvider>
+            <VoiceRouteProvider>
+              {children}
+              <Toaster theme="dark" position="top-center" richColors />
+            </VoiceRouteProvider>
+          </TooltipProvider>
         </GameThemeProvider>
         <Scripts />
       </body>

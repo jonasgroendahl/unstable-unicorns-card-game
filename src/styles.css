@@ -1343,6 +1343,40 @@ a {
   }
 }
 
+/* Live mic equalizer — three bars scaled per-frame by CSS vars from an
+   AnalyserNode (see MicEqualizer.tsx). No animation keyframes: the height
+   follows the audio level, so it naturally sits still when there's silence. */
+.uu-voice-eq {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 0.85rem;
+  padding-inline: 1px;
+}
+
+.uu-voice-eq-bar {
+  width: 2.5px;
+  height: 100%;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.9;
+  transform-origin: center;
+  transform: scaleY(var(--uu-eq-scale, 0.2));
+  transition: transform 90ms linear;
+}
+
+.uu-voice-eq-bar:nth-child(1) {
+  --uu-eq-scale: var(--uu-eq-bar-0, 0.2);
+}
+
+.uu-voice-eq-bar:nth-child(2) {
+  --uu-eq-scale: var(--uu-eq-bar-1, 0.2);
+}
+
+.uu-voice-eq-bar:nth-child(3) {
+  --uu-eq-scale: var(--uu-eq-bar-2, 0.2);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .uu-neighed-scene,
   .uu-neighed-card,
@@ -1351,6 +1385,12 @@ a {
   .uu-neighed-copy {
     animation-duration: 1ms;
     animation-delay: 0ms;
+  }
+
+  /* The rAF loop never starts under reduced motion; pin the bars mid-height. */
+  .uu-voice-eq-bar {
+    transform: scaleY(0.5);
+    transition: none;
   }
 }
 
@@ -2828,74 +2868,138 @@ a {
   gap: 0.55rem;
 }
 
+/*
+ * The deck picker renders on the light "Match setup" panel, but the app runs
+ * the dark design-token set (html.dark), so the default shadcn badge colors
+ * (near-white text/background) vanish against white. Re-skin the inline badges
+ * with the lobby's ink-on-lilac palette so chips like "Optional" stay legible.
+ */
+.uu-lobby .uu-deck-picker [data-slot="badge"] {
+  border-color: rgba(75, 41, 119, 0.16);
+  color: #523078;
+  background: #ede2ff;
+}
+
+.uu-lobby .uu-deck-picker [data-slot="badge"][data-variant="outline"] {
+  border-color: rgba(75, 41, 119, 0.32);
+  color: #5f348b;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.uu-lobby .uu-deck-picker [data-slot="badge"][data-variant="default"] {
+  border-color: transparent;
+  color: #fbf6ff;
+  background: linear-gradient(145deg, #8051bb, #6c3aa8);
+}
+
 .uu-lobby .uu-deck-picker-label {
   color: #806d99;
   font-size: 0.58rem;
   letter-spacing: 0.12em;
 }
 
-.uu-lobby .uu-deck-options {
-  gap: 0.55rem;
-}
-
-.uu-lobby .uu-deck-option {
-  min-height: 8.8rem;
-}
-
-.uu-lobby .uu-deck-option-toggle {
-  min-height: 8.8rem;
+.uu-lobby .uu-deck-current {
   border: 2px solid #e1d6ed;
   border-radius: 1rem;
   color: var(--lobby-ink);
   background: white;
   box-shadow: 0 4px 0 #e1d6ed;
-  transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
 }
 
-.uu-lobby .uu-deck-option-toggle:hover {
-  border-color: #b48ae9;
-  color: var(--lobby-ink);
-  background: #fbf7ff;
-  transform: translateY(-1px);
+/*
+ * Product box images ship with white/light photo backgrounds. Rather than
+ * cutting them out per-image, we blend them onto a consistent light plate with
+ * `multiply`: white pixels vanish into the plate while the colored artwork is
+ * left essentially untouched (the plate sits at ~0.97 luminance). This reads
+ * cleanly in both light and dark app themes at zero runtime cost.
+ */
+.uu-product-image {
+  mix-blend-mode: multiply;
 }
 
-.uu-lobby .uu-deck-option-toggle[data-state="on"] {
-  border-color: #8051bb;
-  color: var(--lobby-ink);
-  background: linear-gradient(145deg, #efe2ff, #dcbfff);
-  box-shadow:
-    0 4px 0 #8051bb,
-    0 0 0 3px rgba(128, 81, 187, 0.13);
+.uu-product-plate {
+  background: #f7f2fb;
 }
 
-.uu-lobby .uu-deck-option-title {
-  font-size: 0.76rem;
+.uu-lobby .uu-deck-current strong {
+  font-size: 0.72rem;
   font-weight: 1000;
 }
 
-.uu-lobby .uu-deck-option-description {
-  color: #857596;
-  font-size: 0.54rem;
+.uu-lobby .uu-deck-current p {
+  font-size: 0.53rem;
   font-weight: 700;
   line-height: 1.4;
-  opacity: 1;
 }
 
-.uu-lobby .uu-deck-preview {
-  border: 1px solid rgba(99, 60, 143, 0.12);
-  border-radius: 0.65rem;
+.uu-lobby .uu-deck-current button {
+  min-height: 1.8rem;
+  padding-inline: 0.35rem;
   color: #633c8b;
-  background: rgba(255, 255, 255, 0.6);
-  font-size: 0.56rem;
+  font-size: 0.54rem;
   font-weight: 900;
 }
 
-.uu-lobby .uu-deck-preview:hover {
-  color: #442660;
-  background: white;
+.uu-lobby .uu-deck-quick-select {
+  gap: 0.45rem;
+}
+
+.uu-lobby .uu-deck-quick-select [data-slot="toggle-group-item"] {
+  min-height: 2.2rem;
+  border: 2px solid #e1d6ed;
+  border-radius: 0.7rem;
+  color: #633c8b;
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 0.55rem;
+  font-weight: 900;
+}
+
+.uu-lobby .uu-deck-quick-select [data-slot="toggle-group-item"][data-state="on"] {
+  border-color: #8051bb;
+  color: #3d2258;
+  background: linear-gradient(145deg, #efe2ff, #dcbfff);
+  box-shadow: 0 2px 0 #8051bb;
+}
+
+/*
+ * The picker lives on the light lobby panel while the app runs the dark
+ * design tokens, so shadcn's filled/outline buttons render dark and low
+ * contrast here (the near-black "Remove Adventures", the gray "Browse").
+ * Re-skin the action buttons with the lobby's purple-on-light palette so
+ * they match the quick-select toggles above them.
+ */
+.uu-lobby .uu-deck-picker [data-slot="button"][data-variant="default"] {
+  color: #fbf6ff;
+  background: linear-gradient(145deg, #8f5fd0, #6c3aa8);
+  box-shadow: 0 2px 0 #522c86;
+}
+
+.uu-lobby .uu-deck-picker [data-slot="button"][data-variant="default"]:hover {
+  background: linear-gradient(145deg, #9a6cd8, #7742b3);
+}
+
+.uu-lobby .uu-deck-picker [data-slot="button"][data-variant="secondary"] {
+  border: 2px solid #c9aef0;
+  color: #4b2a78;
+  background: linear-gradient(145deg, #efe2ff, #dcbfff);
+  box-shadow: 0 2px 0 rgba(82, 44, 134, 0.35);
+}
+
+.uu-lobby .uu-deck-picker [data-slot="button"][data-variant="secondary"]:hover {
+  background: linear-gradient(145deg, #e7d4ff, #d0adfd);
+}
+
+.uu-lobby .uu-deck-picker [data-slot="button"][data-variant="outline"] {
+  border: 2px solid #d8c6ef;
+  color: #5f348b;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 0 #e1d6ed;
+}
+
+.uu-lobby .uu-deck-picker [data-slot="button"][data-variant="outline"]:hover {
+  border-color: #b794e0;
+  color: #4b2a78;
+  background: #f6efff;
 }
 
 .uu-lobby-guest-note {
@@ -3188,15 +3292,6 @@ a {
     min-width: 7rem;
   }
 
-  .uu-lobby .uu-deck-options {
-    grid-template-columns: 1fr;
-  }
-
-  .uu-lobby .uu-deck-option,
-  .uu-lobby .uu-deck-option-toggle {
-    min-height: 7.3rem;
-  }
-
   .uu-lobby-rules {
     grid-template-columns: 1fr 1fr;
   }
@@ -3348,6 +3443,79 @@ html[data-game-theme="unhinged-hedgehogs"] .uu-history {
   --history-yellow: #ffdf68;
   --history-pink: #ff7f76;
   --history-cyan: #67e0ce;
+}
+
+html[data-game-theme="unhinged-hedgehogs"] .uu-lobby .uu-deck-picker [data-slot="badge"] {
+  border-color: rgba(20, 79, 82, 0.16);
+  color: #14595f;
+  background: #d8f4ee;
+}
+
+html[data-game-theme="unhinged-hedgehogs"]
+  .uu-lobby
+  .uu-deck-picker
+  [data-slot="badge"][data-variant="outline"] {
+  border-color: rgba(20, 79, 82, 0.32);
+  color: #146067;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+html[data-game-theme="unhinged-hedgehogs"]
+  .uu-lobby
+  .uu-deck-picker
+  [data-slot="badge"][data-variant="default"] {
+  border-color: transparent;
+  color: #f2fffb;
+  background: linear-gradient(145deg, #17807a, #0d6167);
+}
+
+html[data-game-theme="unhinged-hedgehogs"]
+  .uu-lobby
+  .uu-deck-picker
+  [data-slot="button"][data-variant="default"] {
+  color: #f2fffb;
+  background: linear-gradient(145deg, #1f948c, #0d6167);
+  box-shadow: 0 2px 0 #0a4a4e;
+}
+
+html[data-game-theme="unhinged-hedgehogs"]
+  .uu-lobby
+  .uu-deck-picker
+  [data-slot="button"][data-variant="default"]:hover {
+  background: linear-gradient(145deg, #24a199, #117076);
+}
+
+html[data-game-theme="unhinged-hedgehogs"]
+  .uu-lobby
+  .uu-deck-picker
+  [data-slot="button"][data-variant="secondary"] {
+  border-color: #a6e2d9;
+  color: #114f52;
+  background: linear-gradient(145deg, #dcf5ef, #b9ebe0);
+}
+
+html[data-game-theme="unhinged-hedgehogs"]
+  .uu-lobby
+  .uu-deck-picker
+  [data-slot="button"][data-variant="secondary"]:hover {
+  background: linear-gradient(145deg, #cdf0e8, #a6e2d9);
+}
+
+html[data-game-theme="unhinged-hedgehogs"]
+  .uu-lobby
+  .uu-deck-picker
+  [data-slot="button"][data-variant="outline"] {
+  border-color: #bfe6df;
+  color: #146067;
+}
+
+html[data-game-theme="unhinged-hedgehogs"]
+  .uu-lobby
+  .uu-deck-picker
+  [data-slot="button"][data-variant="outline"]:hover {
+  border-color: #8fd8cc;
+  color: #114f52;
+  background: #edfbf7;
 }
 
 html[data-game-theme="unhinged-hedgehogs"] .uu-home,

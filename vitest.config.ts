@@ -10,7 +10,7 @@ export default defineConfig({
       "src/game/**/*.test.ts",
       "src/components/**/*.test.tsx",
       "src/lib/**/*.test.ts",
-      "src/server/registry.test.ts",
+      "src/server/**/*.test.ts",
     ],
   },
 });

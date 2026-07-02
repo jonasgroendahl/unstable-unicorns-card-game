@@ -13,6 +13,7 @@ import { Button } from "#/components/ui/button.tsx";
 import { cn } from "#/lib/utils.ts";
 import { CardView, type CardSize } from "./CardView.tsx";
 import type { PlayerView, CardView as CardViewData } from "#/game/view.ts";
+import { VoicePeerControl } from "#/components/voice/VoiceControls.tsx";
 
 interface PlayerStableProps {
   player: PlayerView;
@@ -101,6 +102,9 @@ export function PlayerStable({
             <Hand className="size-2.5" />
             {player.handCount}
           </span>
+        )}
+        {!isViewer && !player.isBot && (
+          <VoicePeerControl playerId={player.id} playerName={player.name} />
         )}
         {onInspect && !stableTargetable && (
           <Button

@@ -22,6 +22,7 @@ import { audio } from "#/lib/audio.ts";
 import type { GameView, CardView as CardViewData } from "#/game/view.ts";
 import type { Answer } from "#/lib/gameClient.ts";
 import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
+import { VoiceMicControl } from "#/components/voice/VoiceControls.tsx";
 
 export interface BoardActions {
   playCard: (instanceId: string) => Promise<string | void>;
@@ -254,6 +255,8 @@ export function GameBoard({ view, actions, seatSwitcher }: GameBoardProps) {
         </span>
         <div className="flex items-center gap-2 sm:ml-auto">
           {seatSwitcher}
+          <VoiceMicControl compact className="sm:hidden" />
+          <VoiceMicControl className="hidden sm:flex" />
           <AudioControl className="hidden sm:flex" />
           <AudioControl compact className="sm:hidden" />
         </div>

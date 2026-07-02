@@ -15,6 +15,7 @@ import { Route as DebugRouteImport } from './routes/debug'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlayGameIdRouteImport } from './routes/play.$gameId'
 import { Route as LobbyGameIdRouteImport } from './routes/lobby.$gameId'
+import { Route as ApiVoiceGameIdRouteImport } from './routes/api/voice.$gameId'
 import { Route as ApiStreamGameIdRouteImport } from './routes/api/stream.$gameId'
 
 const HistoryRoute = HistoryRouteImport.update({
@@ -47,6 +48,11 @@ const LobbyGameIdRoute = LobbyGameIdRouteImport.update({
   path: '/lobby/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVoiceGameIdRoute = ApiVoiceGameIdRouteImport.update({
+  id: '/api/voice/$gameId',
+  path: '/api/voice/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStreamGameIdRoute = ApiStreamGameIdRouteImport.update({
   id: '/api/stream/$gameId',
   path: '/api/stream/$gameId',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/lobby/$gameId': typeof LobbyGameIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
   '/api/stream/$gameId': typeof ApiStreamGameIdRoute
+  '/api/voice/$gameId': typeof ApiVoiceGameIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/lobby/$gameId': typeof LobbyGameIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
   '/api/stream/$gameId': typeof ApiStreamGameIdRoute
+  '/api/voice/$gameId': typeof ApiVoiceGameIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/lobby/$gameId': typeof LobbyGameIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
   '/api/stream/$gameId': typeof ApiStreamGameIdRoute
+  '/api/voice/$gameId': typeof ApiVoiceGameIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/lobby/$gameId'
     | '/play/$gameId'
     | '/api/stream/$gameId'
+    | '/api/voice/$gameId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/lobby/$gameId'
     | '/play/$gameId'
     | '/api/stream/$gameId'
+    | '/api/voice/$gameId'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/lobby/$gameId'
     | '/play/$gameId'
     | '/api/stream/$gameId'
+    | '/api/voice/$gameId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   LobbyGameIdRoute: typeof LobbyGameIdRoute
   PlayGameIdRoute: typeof PlayGameIdRoute
   ApiStreamGameIdRoute: typeof ApiStreamGameIdRoute
+  ApiVoiceGameIdRoute: typeof ApiVoiceGameIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -165,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LobbyGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/voice/$gameId': {
+      id: '/api/voice/$gameId'
+      path: '/api/voice/$gameId'
+      fullPath: '/api/voice/$gameId'
+      preLoaderRoute: typeof ApiVoiceGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stream/$gameId': {
       id: '/api/stream/$gameId'
       path: '/api/stream/$gameId'
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   LobbyGameIdRoute: LobbyGameIdRoute,
   PlayGameIdRoute: PlayGameIdRoute,
   ApiStreamGameIdRoute: ApiStreamGameIdRoute,
+  ApiVoiceGameIdRoute: ApiVoiceGameIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -103,6 +103,13 @@ Web Audio API. To use custom music, drop an MP3/OGG at
 production and it will loop automatically. Volume and mute persist to
 `localStorage`.
 
+Multiplayer rooms also include opt-in, peer-to-peer voice chat. Press **M** or
+use the microphone control in the lobby or game to toggle your mic. Incoming
+players can be muted individually without affecting anyone else. Voice uses a
+public STUN server by default; for reliable production connectivity, set the
+server-only `VOICE_ICE_SERVERS_JSON` variable to a JSON array of WebRTC ICE
+server objects containing your STUN and TURN configuration.
+
 ## Scripts
 
 ```bash

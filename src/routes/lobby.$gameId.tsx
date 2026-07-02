@@ -38,6 +38,7 @@ import {
   BotDifficultyToggle,
 } from "#/components/game/BotDifficultyControl.tsx";
 import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
+import { VoiceMicControl, VoicePeerControl } from "#/components/voice/VoiceControls.tsx";
 
 export const Route = createFileRoute("/lobby/$gameId")({ component: LobbyView });
 
@@ -107,10 +108,13 @@ function LobbyView() {
             <strong>{theme.name}</strong>
           </div>
 
-          <Badge className="uu-lobby-status">
-            <span aria-hidden="true" />
-            Room online
-          </Badge>
+          <div className="flex items-center gap-2">
+            <VoiceMicControl compact />
+            <Badge className="uu-lobby-status">
+              <span aria-hidden="true" />
+              Room online
+            </Badge>
+          </div>
         </header>
 
         <section className="uu-lobby-hero">
@@ -206,6 +210,9 @@ function LobbyView() {
                     ) : (
                       <BotDifficultyBadge difficulty={seat.botDifficulty} />
                     ))}
+                  {!seat.isBot && seat.id !== youId && (
+                    <VoicePeerControl playerId={seat.id} playerName={seat.name} />
+                  )}
                   {isHost && seat.id !== lobby.hostId && (
                     <button
                       className="uu-lobby-remove"

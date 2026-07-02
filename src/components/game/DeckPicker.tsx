@@ -1,7 +1,15 @@
 import { useMemo, useState } from "react";
-import { Compass, Layers3, Search } from "lucide-react";
+import { Check, Compass, Layers3, LibraryBig, LockKeyhole, Search } from "lucide-react";
 import { Badge } from "#/components/ui/badge.tsx";
 import { Button } from "#/components/ui/button.tsx";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "#/components/ui/card.tsx";
 import {
   Dialog,
   DialogContent,
@@ -10,17 +18,21 @@ import {
   DialogTitle,
 } from "#/components/ui/dialog.tsx";
 import { Input } from "#/components/ui/input.tsx";
+import { ScrollArea } from "#/components/ui/scroll-area.tsx";
 import { ToggleGroup, ToggleGroupItem } from "#/components/ui/toggle-group.tsx";
 import { useGameTheme } from "#/components/theme/GameThemeProvider.tsx";
 import {
+  DECK_CATALOG,
   DECK_OPTIONS,
   DECKS,
-  EXPANSION_OPTIONS,
+  EXPANSION_CATALOG,
   EXPANSIONS,
   definitionsForExpansion,
   definitionsForDeck,
   isExcludedInTwoPlayer,
+  type DeckCatalogEntry,
   type DeckId,
+  type ExpansionCatalogEntry,
   type ExpansionId,
 } from "#/game/decks.ts";
 import { getCardKindLabel, getCardPresentation } from "#/game/themes/cardPresentation.ts";
@@ -35,6 +47,99 @@ const CARD_GROUPS = [
   ["downgrade", "Downgrades"],
   ["instant", "Instants"],
 ] as const;
+
+type AvailableCatalogEntry = Extract<
+  DeckCatalogEntry | ExpansionCatalogEntry,
+  { availability: "available" }
+>;
+type UnavailableCatalogEntry = Extract<
+  DeckCatalogEntry | ExpansionCatalogEntry,
+  { availability: "unavailable" }
+>;
+
+function ProductImage({
+  src,
+  name,
+  className,
+  loading,
+}: {
+  src: string;
+  name: string;
+  className: string;
+  loading?: "eager" | "lazy";
+}) {
+  return (
+    <img
+      src={src}
+      alt={`${name} box`}
+      loading={loading}
+      className={`${className} uu-product-image rounded-lg object-contain`}
+    />
+  );
+}
+
+function CatalogProductCard(
+  props:
+    | {
+        entry: AvailableCatalogEntry;
+        selected: boolean;
+        canSelect: boolean;
+        cardCountLabel: string;
+        actionLabel: string;
+        selectedLabel: string;
+        onSelect: () => void;
+      }
+    | {
+        entry: UnavailableCatalogEntry;
+      },
+) {
+  const { entry } = props;
+  const availableProps = "selected" in props ? props : null;
+
+  return (
+    <Card className="gap-3 overflow-hidden py-0" data-testid={`catalog-${entry.id}`}>
+      <CardContent className="uu-product-plate flex h-40 items-center justify-center px-4 py-3 sm:h-44">
+        <ProductImage src={entry.image} name={entry.name} loading="lazy" className="size-full" />
+      </CardContent>
+      <CardHeader className="gap-2 px-4">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant={availableProps ? "outline" : "secondary"}>
+            {availableProps ? "Available" : "Unavailable"}
+          </Badge>
+          {availableProps ? (
+            <Badge variant="secondary">{availableProps.cardCountLabel}</Badge>
+          ) : null}
+        </div>
+        <CardTitle>{entry.shortName}</CardTitle>
+        <CardDescription>{entry.description}</CardDescription>
+      </CardHeader>
+      <CardFooter className="mt-auto px-4 pb-4">
+        {availableProps ? (
+          <Button
+            type="button"
+            variant={availableProps.selected ? "secondary" : "outline"}
+            className="w-full"
+            disabled={!availableProps.canSelect}
+            aria-pressed={availableProps.selected}
+            onClick={availableProps.onSelect}
+          >
+            {availableProps.selected ? (
+              <Check data-icon="inline-start" />
+            ) : (
+              <Layers3 data-icon="inline-start" />
+            )}
+            {availableProps.selected ? availableProps.selectedLabel : availableProps.actionLabel}
+          </Button>
+        ) : (
+          <Button type="button" variant="outline" className="w-full" disabled>
+            <LockKeyhole data-icon="inline-start" />
+            Unavailable
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  );
+}
 
 export function DeckPicker({
   value,
@@ -54,10 +159,17 @@ export function DeckPicker({
 }) {
   const { themeId } = useGameTheme();
   const isTwoPlayer = playerCount === 2;
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [preview, setPreview] = useState<
     { kind: "base"; id: DeckId } | { kind: "expansion"; id: ExpansionId } | null
   >(null);
   const [query, setQuery] = useState("");
+  const selectedDeck = DECKS[value];
+  const adventures = EXPANSIONS["adventures-second-edition"];
+  const adventuresSelected = expansionIds.includes("adventures-second-edition");
+  const canChangeDeck = !disabled && Boolean(onChange);
+  const canChangeExpansions = !disabled && Boolean(onExpansionChange);
+
   const previewCards = useMemo(() => {
     if (!preview) return [];
     const normalized = query.trim().toLowerCase();
@@ -88,105 +200,216 @@ export function DeckPicker({
         ? EXPANSIONS[preview.id].cardCount
         : 0;
 
-  return (
-    <div className="uu-deck-picker flex flex-col gap-2">
-      <span className="uu-deck-picker-label flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
-        <Layers3 data-icon="inline-start" /> Deck
-      </span>
-      <ToggleGroup
-        type="single"
-        variant="outline"
-        spacing={2}
-        value={value}
-        disabled={disabled || !onChange}
-        onValueChange={(next) => {
-          if (next) onChange?.(next as DeckId);
-        }}
-        className="uu-deck-options grid w-full grid-cols-2"
-        aria-label="Choose a deck"
-      >
-        {DECK_OPTIONS.map((deck) => (
-          <div key={deck.id} className="uu-deck-option relative min-w-0">
-            <ToggleGroupItem
-              value={deck.id}
-              aria-label={deck.name}
-              className="uu-deck-option-toggle h-full min-h-28 w-full flex-col items-start justify-start gap-1 whitespace-normal px-3 pb-11 pt-2 text-left"
-            >
-              <span className="uu-deck-option-title font-semibold">{deck.shortName}</span>
-              <span className="uu-deck-option-description text-xs font-normal">
-                {deck.description}
-              </span>
-            </ToggleGroupItem>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="uu-deck-preview absolute right-1.5 bottom-1.5 left-1.5 w-auto"
-              aria-label={`Preview ${deck.name} cards`}
-              onClick={() => {
-                setQuery("");
-                setPreview({ kind: "base", id: deck.id });
-              }}
-            >
-              <Search data-icon="inline-start" /> Preview cards
-            </Button>
-          </div>
-        ))}
-      </ToggleGroup>
+  const toggleExpansion = (expansionId: ExpansionId) => {
+    if (expansionIds.includes(expansionId)) {
+      onExpansionChange?.(expansionIds.filter((id) => id !== expansionId));
+    } else {
+      onExpansionChange?.([...expansionIds, expansionId]);
+    }
+  };
 
-      <span className="mt-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
-        <Compass data-icon="inline-start" /> Expansion decks
-        <Badge variant="secondary">Optional</Badge>
-      </span>
-      <ToggleGroup
-        type="multiple"
-        variant="outline"
-        spacing={2}
-        value={expansionIds}
-        disabled={disabled || !onExpansionChange}
-        onValueChange={(next) => onExpansionChange?.(next as ExpansionId[])}
-        className="grid w-full grid-cols-1"
-        aria-label="Choose expansion decks"
-      >
-        {EXPANSION_OPTIONS.map((expansion) => (
-          <div key={expansion.id} className="uu-deck-option relative min-w-0">
-            <ToggleGroupItem
-              value={expansion.id}
-              aria-label={`Add ${expansion.name}`}
-              className="uu-deck-option-toggle h-full min-h-32 w-full justify-start gap-3 whitespace-normal px-3 pb-11 pt-3 text-left"
-            >
-              <img
-                src={expansion.image}
-                alt=""
-                className="h-16 w-12 shrink-0 rounded object-cover shadow-sm"
-              />
-              <span className="flex min-w-0 flex-col items-start gap-1">
-                <span className="flex flex-wrap items-center gap-1.5">
-                  <strong>{expansion.shortName}</strong>
-                  <Badge variant="secondary">+{expansion.cardCount} cards</Badge>
-                </span>
-                <span className="text-xs font-normal">{expansion.description}</span>
-              </span>
-            </ToggleGroupItem>
+  return (
+    <div className="uu-deck-picker flex flex-col gap-3">
+      <section className="flex flex-col gap-2" aria-labelledby="base-deck-heading">
+        <span
+          id="base-deck-heading"
+          className="uu-deck-picker-label flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide"
+        >
+          <Layers3 data-icon="inline-start" /> Base deck
+        </span>
+        <div className="uu-deck-current grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-xl border p-3">
+          <ProductImage
+            src={selectedDeck.image}
+            name={selectedDeck.name}
+            loading="eager"
+            className="h-20 w-[4.5rem]"
+          />
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <strong className="truncate">{selectedDeck.shortName}</strong>
+              <Badge variant="secondary">{selectedDeck.cardCount} cards</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">{selectedDeck.description}</p>
             <Button
               type="button"
               size="sm"
               variant="ghost"
-              className="uu-deck-preview absolute right-1.5 bottom-1.5 left-1.5 w-auto"
-              aria-label={`Preview ${expansion.name} cards`}
+              className="mt-auto self-start"
+              aria-label={`Preview ${selectedDeck.name} cards`}
               onClick={() => {
                 setQuery("");
-                setPreview({ kind: "expansion", id: expansion.id });
+                setPreview({ kind: "base", id: value });
               }}
             >
-              <Search data-icon="inline-start" /> Preview expansion
+              <Search data-icon="inline-start" /> Preview selected deck
             </Button>
           </div>
-        ))}
-      </ToggleGroup>
-      {expansionIds.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No expansion deck selected.</p>
-      ) : null}
+        </div>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          spacing={2}
+          value={value}
+          disabled={!canChangeDeck}
+          onValueChange={(next) => {
+            if (next) onChange?.(next as DeckId);
+          }}
+          className="uu-deck-quick-select grid w-full grid-cols-2"
+          aria-label="Quick select a base deck"
+        >
+          {DECK_OPTIONS.map((deck) => (
+            <ToggleGroupItem
+              key={deck.id}
+              value={deck.id}
+              aria-label={`Select ${deck.name}`}
+              className="w-full"
+            >
+              {deck.shortName}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </section>
+
+      <section className="flex flex-col gap-2" aria-labelledby="expansion-deck-heading">
+        <span
+          id="expansion-deck-heading"
+          className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide"
+        >
+          <Compass data-icon="inline-start" /> Expansion packs
+          <Badge variant="secondary">Optional</Badge>
+        </span>
+        <div className="uu-deck-current grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-xl border p-3">
+          <ProductImage
+            src={adventures.image}
+            name={adventures.name}
+            loading="eager"
+            className="h-20 w-[4.5rem]"
+          />
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <strong>
+                {adventuresSelected ? "Adventures included" : "No expansion selected"}
+              </strong>
+              <Badge variant={adventuresSelected ? "default" : "outline"}>
+                {adventuresSelected ? `+${adventures.cardCount} cards` : "Optional"}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {adventuresSelected
+                ? adventures.description
+                : "Add Adventures now, or browse the full expansion catalog below."}
+            </p>
+            <div className="mt-auto flex flex-wrap items-center gap-1.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={adventuresSelected ? "secondary" : "default"}
+                disabled={!canChangeExpansions}
+                aria-pressed={adventuresSelected}
+                aria-label={`Toggle ${adventures.name}`}
+                onClick={() => toggleExpansion(adventures.id)}
+              >
+                {adventuresSelected ? (
+                  <Check data-icon="inline-start" />
+                ) : (
+                  <Layers3 data-icon="inline-start" />
+                )}
+                {adventuresSelected ? "Remove Adventures" : "Add Adventures"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label={`Preview ${adventures.name} cards`}
+                onClick={() => {
+                  setQuery("");
+                  setPreview({ kind: "expansion", id: adventures.id });
+                }}
+              >
+                <Search data-icon="inline-start" /> Preview
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        onClick={() => setCatalogOpen(true)}
+      >
+        <LibraryBig data-icon="inline-start" />
+        Browse all decks & expansions
+      </Button>
+
+      <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
+        <DialogContent className="flex h-[min(92dvh,58rem)] max-w-[calc(100%-2rem)] flex-col overflow-hidden sm:max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>Deck and expansion catalog</DialogTitle>
+            <DialogDescription>
+              Quick-select supported products or explore what is coming to the game later.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="min-h-0 flex-1 pr-3">
+            <div className="flex flex-col gap-8 pb-2">
+              <section className="flex flex-col gap-3" aria-labelledby="catalog-base-decks">
+                <div className="flex items-center gap-2">
+                  <h3 id="catalog-base-decks" className="font-semibold">
+                    Base decks
+                  </h3>
+                  <Badge variant="secondary">{DECK_CATALOG.length}</Badge>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {DECK_CATALOG.map((entry) =>
+                    entry.availability === "available" ? (
+                      <CatalogProductCard
+                        key={entry.id}
+                        entry={entry}
+                        selected={value === entry.playableId}
+                        canSelect={canChangeDeck}
+                        cardCountLabel={`${entry.cardCount} cards`}
+                        actionLabel="Select deck"
+                        selectedLabel="Selected deck"
+                        onSelect={() => onChange?.(entry.playableId)}
+                      />
+                    ) : (
+                      <CatalogProductCard key={entry.id} entry={entry} />
+                    ),
+                  )}
+                </div>
+              </section>
+
+              <section className="flex flex-col gap-3" aria-labelledby="catalog-expansion-packs">
+                <div className="flex items-center gap-2">
+                  <h3 id="catalog-expansion-packs" className="font-semibold">
+                    Expansion packs
+                  </h3>
+                  <Badge variant="secondary">{EXPANSION_CATALOG.length}</Badge>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {EXPANSION_CATALOG.map((entry) =>
+                    entry.availability === "available" ? (
+                      <CatalogProductCard
+                        key={entry.id}
+                        entry={entry}
+                        selected={expansionIds.includes(entry.playableId)}
+                        canSelect={canChangeExpansions}
+                        cardCountLabel={`+${entry.cardCount} cards`}
+                        actionLabel="Add expansion"
+                        selectedLabel="Remove expansion"
+                        onSelect={() => toggleExpansion(entry.playableId)}
+                      />
+                    ) : (
+                      <CatalogProductCard key={entry.id} entry={entry} />
+                    ),
+                  )}
+                </div>
+              </section>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={preview !== null}
